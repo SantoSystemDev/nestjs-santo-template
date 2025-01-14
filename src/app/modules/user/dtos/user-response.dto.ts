@@ -53,8 +53,9 @@ export class UserResponseDto {
   avatarUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'The phone number of the user',
-    example: '+1234567890',
+    description:
+      'The phone number of the user. It must follow the format: DDD + cellphone number, without spaces or special characters. Example: 11 91234-5678 = 11912345678',
+    example: '11912345678',
   })
   phoneNumber?: string;
 

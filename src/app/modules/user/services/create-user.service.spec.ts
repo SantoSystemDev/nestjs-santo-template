@@ -4,12 +4,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import type { CreateUserDto, UserResponseDto } from '../dtos';
 import { RoleEnum } from '../enums/role.enum';
-import { UserService } from './user.service';
+import { CreateUserService } from './create-user.service';
 
 jest.mock('bcrypt');
 
-describe(UserService.name, () => {
-  let userService: UserService;
+describe(CreateUserService.name, () => {
+  let userService: CreateUserService;
   let prismaService: PrismaService;
 
   const mockPrismaService = {
@@ -23,12 +23,12 @@ describe(UserService.name, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserService,
+        CreateUserService,
         { provide: PrismaService, useValue: mockPrismaService },
       ],
     }).compile();
 
-    userService = module.get<UserService>(UserService);
+    userService = module.get<CreateUserService>(CreateUserService);
     prismaService = module.get<PrismaService>(PrismaService);
   });
 

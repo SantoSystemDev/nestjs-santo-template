@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsNumberString,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   MinLength,
 } from 'class-validator';
@@ -46,24 +47,23 @@ export class CreateUserDto {
   @ArrayNotEmpty()
   roles: RoleEnum[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The avatar URL of the user',
-    required: false,
     example: 'http://example.com/avatar.png',
   })
   @IsOptional()
   @IsString()
   avatarUrl?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'The phone number of the user. It must follow the format: DDI + DDD + cellphone number, without spaces or special characters. Example: +55 11 91234-5678 = 5511912345678',
-    required: false,
-    example: '5511912345678',
+      'The phone number of the user. It must follow the format: DDD + cellphone number, without spaces or special characters. Example: 11 91234-5678 = 11912345678',
+    example: '11912345678',
   })
   @IsOptional()
   @IsNumberString()
-  @MinLength(13)
+  @MinLength(11)
+  @IsPhoneNumber('BR')
   phoneNumber?: string;
 
   constructor(data: {

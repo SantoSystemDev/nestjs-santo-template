@@ -10,7 +10,7 @@ import { CreateUserDto, RoleResponseDto, UserResponseDto } from '../dtos';
 import { RoleEnum } from '../enums/role.enum';
 
 @Injectable()
-export class UserService {
+export class CreateUserService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
