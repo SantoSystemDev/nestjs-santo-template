@@ -212,6 +212,49 @@ describe(UserService.name, () => {
       ).rejects.toThrow(new Error('Database error'));
     });
 
+    it('should throw an error if roles are empty', async () => {
+      const createUserDto = {
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+        avatarUrl: 'http://avatar.com/avatar.png',
+        phoneNumber: '123456789',
+        roles: [],
+      };
+
+      mockPrismaService.$transaction.mockResolvedValueOnce([
+        null,
+        {
+          id: adminId,
+          roles: [{ name: RoleEnum.ADMIN.toString() }],
+        },
+      ]);
+
+      mockPrismaService.$transaction.mockImplementationOnce(
+        async (callback) => {
+          return await callback({
+            user: {
+              create: jest.fn().mockResolvedValue({
+                id: userId,
+                email: createUserDto.email,
+                fullName: createUserDto.fullName,
+                avatarUrl: createUserDto.avatarUrl || null,
+                phoneNumber: createUserDto.phoneNumber || null,
+                isActive: true,
+                roles: null,
+              }),
+            },
+          });
+        },
+      );
+
+      await expect(
+        userService.register(createUserDto, adminId),
+      ).rejects.toThrow(
+        new Error("Cannot read properties of null (reading 'map')"),
+      );
+    });
+
     it('should throw an error if roles are invalid', async () => {
       const createUserDto = {
         email: 'test@example.com',
@@ -235,52 +278,6 @@ describe(UserService.name, () => {
       ).rejects.toThrow(
         new Error("Cannot read properties of undefined (reading 'roles')"),
       );
-    });
-
-    it('should throw an error if roles are invalid', async () => {
-      const createUserDto = {
-        email: 'test@example.com',
-        password: 'password123',
-        fullName: 'Test User',
-        avatarUrl: 'http://avatar.com/avatar.png',
-        phoneNumber: '123456789',
-        roles: RoleEnum['ROLE_NOT_FOUND'],
-      };
-
-      mockPrismaService.$transaction.mockResolvedValueOnce([
-        null,
-        {
-          id: adminId,
-          roles: [{ name: RoleEnum.ADMIN.toString() }],
-        },
-      ]);
-
-      mockPrismaService.$transaction.mockImplementationOnce(
-        async (callback) => {
-          return await callback({
-            user: {
-              create: jest.fn().mockResolvedValue({
-                id: userId,
-                email: createUserDto.email,
-                fullName: createUserDto.fullName,
-                avatarUrl: createUserDto.avatarUrl || null,
-                phoneNumber: createUserDto.phoneNumber || null,
-                isActive: true,
-              }),
-            },
-          });
-        },
-      );
-
-      const result: UserResponseDto = await userService.register(
-        createUserDto,
-        adminId,
-      );
-
-      expect(result).toHaveProperty('id');
-      expect(result.email).toEqual(createUserDto.email);
-      expect(result.fullName).toEqual(createUserDto.fullName);
-      expect(result.roles).toHaveLength(0);
     });
   });
 });

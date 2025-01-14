@@ -6,8 +6,7 @@ import {
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { RoleResponseDto, UserResponseDto } from '../dtos';
-import { CreateUserDto } from '../dtos/create-user.dto';
+import { CreateUserDto, RoleResponseDto, UserResponseDto } from '../dtos';
 import { RoleEnum } from '../enums/role.enum';
 
 @Injectable()
@@ -33,7 +32,7 @@ export class UserService {
 
     return new UserResponseDto({
       ...newUser,
-      roles: this.mapRolesToResponse(newUser.roles ?? []),
+      roles: this.mapRolesToResponse(newUser.roles),
     });
   }
 
