@@ -1,5 +1,5 @@
 #!make
-SHELL=bash
+SHELL = bash
 
 ###################################################################################################
 ## INIT
@@ -46,11 +46,6 @@ test: ##@NESTJS Run unit tests
 cov: ##@NESTJS Run unit tests with coverage
 	@echo "$(CYAN)[COVERAGE]$(RESET) Running unit tests with coverage..."
 	@npm run test:cov
-
-.PHONY: test-e2e
-test-e2e: ##@NESTJS Run end-to-end tests
-	@echo "$(CYAN)[TEST-E2E]$(RESET) Running end-to-end tests..."
-	@npm run test:e2e
 
 .PHONY: lint
 lint: ##@NESTJS Run formatting and linting

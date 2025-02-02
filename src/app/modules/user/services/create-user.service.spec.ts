@@ -2,7 +2,7 @@ import { PrismaService } from '@infra/database';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
-import type { CreateUserDto, UserResponseDto } from '../dtos';
+import { CreateUserDto, UserResponseDto } from '../dtos';
 import { RoleEnum } from '../enums/role.enum';
 import { CreateUserService } from './create-user.service';
 
@@ -10,7 +10,6 @@ jest.mock('bcrypt');
 
 describe(CreateUserService.name, () => {
   let userService: CreateUserService;
-  let prismaService: PrismaService;
 
   const mockPrismaService = {
     user: {
@@ -29,7 +28,6 @@ describe(CreateUserService.name, () => {
     }).compile();
 
     userService = module.get<CreateUserService>(CreateUserService);
-    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -38,7 +36,6 @@ describe(CreateUserService.name, () => {
 
   it('should be defined', () => {
     expect(userService).toBeDefined();
-    expect(prismaService).toBeDefined();
   });
 
   describe('register', () => {

@@ -1,14 +1,6 @@
 // import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Req,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
-import { Request } from 'express';
 import { CreateUserDto, UserResponseDto } from '../dtos';
 import { CreateUserService } from '../services';
 
@@ -51,9 +43,9 @@ export class UserController {
       },
     },
   })
-  async register(
+  async create(
     @Body() createUserDto: CreateUserDto,
-    @Req() request: Request,
+    // @Req() request: Request,
   ): Promise<UserResponseDto> {
     // const adminId = request.user['id'];
     return this.userService.register(createUserDto, 'adminId');

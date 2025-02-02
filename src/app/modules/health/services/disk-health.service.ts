@@ -7,12 +7,12 @@ export class DiskHealthService {
 
   async check() {
     // Define the path and threshold for the disk check
-    const diskPath = process.platform === 'win32' ? 'C:\\' : '/'; // Default to C:\ for Windows, root for others
-    const diskThreshold = 0.9; // 80% disk usage threshold
+    const DEFAULT_DISK_PATH = process.platform === 'win32' ? 'C:\\' : '/'; // Default to C:\ for Windows, root for others
+    const MAX_DISK_USAGE_90_PERCENT = 0.9; // disk usage limit
 
     return this.diskHealthIndicator.checkStorage('disk', {
-      path: diskPath,
-      thresholdPercent: diskThreshold,
+      path: DEFAULT_DISK_PATH,
+      thresholdPercent: MAX_DISK_USAGE_90_PERCENT,
     });
   }
 }
