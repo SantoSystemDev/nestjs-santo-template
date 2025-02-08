@@ -1,3 +1,4 @@
+import { RoleEnum } from '@modules/user/domain/enums/role.enum';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
@@ -10,7 +11,6 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { RoleEnum } from '../enums/role.enum';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -37,16 +37,6 @@ export class CreateUserDto {
   @IsString()
   fullName: string;
 
-  @ApiProperty({
-    description: 'The roles assigned to the user',
-    example: ['USER'],
-    enum: RoleEnum,
-    isArray: true,
-  })
-  @IsArray({ each: true })
-  @ArrayNotEmpty()
-  roles: RoleEnum[];
-
   @ApiPropertyOptional({
     description: 'The avatar URL of the user',
     example: 'http://example.com/avatar.png',
@@ -66,14 +56,17 @@ export class CreateUserDto {
   @IsPhoneNumber('BR')
   phoneNumber?: string;
 
-  constructor(data: {
-    email: string;
-    password: string;
-    fullName: string;
-    roles: RoleEnum[];
-    avatarUrl?: string;
-    phoneNumber?: string;
-  }) {
+  @ApiProperty({
+    description: 'The roles assigned to the user',
+    example: ['USER'],
+    enum: RoleEnum,
+    isArray: true,
+  })
+  @IsArray({ each: true })
+  @ArrayNotEmpty()
+  roles: RoleEnum[];
+
+  constructor(data: Partial<CreateUserDto>) {
     Object.assign(this, data);
   }
 }

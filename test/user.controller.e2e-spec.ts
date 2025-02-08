@@ -1,7 +1,7 @@
-import { UserController } from '@app/modules/user/controllers';
-import { CreateUserDto, UserResponseDto } from '@app/modules/user/dtos';
-import { RoleEnum } from '@app/modules/user/enums/role.enum';
-import { CreateUserService } from '@app/modules/user/services';
+import { CreateUserDto, UserResponseDto } from '@modules/user/application/dtos';
+import { RoleEnum } from '@modules/user/domain/enums/role.enum';
+import { CreateUserServicePort } from '@modules/user/domain/ports';
+import { UserController } from '@modules/user/presentation/controllers';
 import {
   ConflictException,
   INestApplication,
@@ -14,13 +14,15 @@ describe(UserController.name, () => {
   let app: INestApplication;
 
   const mockUserService = {
-    register: jest.fn(),
+    execute: jest.fn(),
   };
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [{ provide: CreateUserService, useValue: mockUserService }],
+      providers: [
+        { provide: CreateUserServicePort, useValue: mockUserService },
+      ],
     }).compile();
 
     app = module.createNestApplication();
@@ -60,7 +62,7 @@ describe(UserController.name, () => {
     };
 
     it('should register a user successfully', async () => {
-      mockUserService.register.mockResolvedValue(responseDto);
+      mockUserService.execute.mockResolvedValue(responseDto);
 
       await request(app.getHttpServer())
         .post('/users')
@@ -72,7 +74,7 @@ describe(UserController.name, () => {
     });
 
     it('should return 409 if email is already in use', async () => {
-      mockUserService.register.mockRejectedValue(
+      mockUserService.execute.mockRejectedValue(
         new ConflictException('Email already in use'),
       );
 
@@ -90,7 +92,7 @@ describe(UserController.name, () => {
     });
 
     it('should return 401 if user is unauthorized', async () => {
-      mockUserService.register.mockRejectedValue(
+      mockUserService.execute.mockRejectedValue(
         new UnauthorizedException(
           'You do not have permission to perform this action',
         ),

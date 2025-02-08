@@ -1,13 +1,13 @@
 // import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
+import { CreateUserServicePort } from '@modules/user/domain/ports';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
-import { CreateUserDto, UserResponseDto } from '../dtos';
-import { CreateUserService } from '../services';
+import { CreateUserDto, UserResponseDto } from '../../application/dtos';
 
 @ApiBearerAuth()
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: CreateUserService) {}
+  constructor(private readonly service: CreateUserServicePort) {}
 
   @Post()
   // @UseGuards(JwtAuthGuard)
@@ -48,6 +48,6 @@ export class UserController {
     // @Req() request: Request,
   ): Promise<UserResponseDto> {
     // const adminId = request.user['id'];
-    return this.userService.register(createUserDto, 'adminId');
+    return this.service.execute(createUserDto, 'adminId');
   }
 }

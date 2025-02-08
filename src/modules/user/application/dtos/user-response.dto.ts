@@ -1,5 +1,5 @@
+import { RoleEnum } from '@modules/user/domain/enums/role.enum';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { RoleEnum } from '../enums/role.enum';
 
 export class RoleResponseDto {
   @ApiProperty({
@@ -21,7 +21,7 @@ export class RoleResponseDto {
   })
   description?: string;
 
-  constructor(data: { id: string; name: RoleEnum; description?: string }) {
+  constructor(data: Partial<RoleResponseDto>) {
     Object.assign(this, data);
   }
 }
@@ -71,15 +71,7 @@ export class UserResponseDto {
   })
   roles: RoleResponseDto[];
 
-  constructor(data: {
-    id: string;
-    email: string;
-    fullName: string;
-    avatarUrl?: string;
-    phoneNumber?: string;
-    isActive: boolean;
-    roles: RoleResponseDto[];
-  }) {
+  constructor(data: Partial<UserResponseDto>) {
     Object.assign(this, data);
   }
 }

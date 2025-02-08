@@ -1,4 +1,4 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -22,6 +22,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.enableCors();
+  app.setGlobalPrefix('v1', {
+    exclude: [{ path: 'health', method: RequestMethod.ALL }],
+  });
 
   await app.listen(port);
 
