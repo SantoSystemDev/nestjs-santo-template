@@ -21,6 +21,7 @@ const config: Config = {
     '.entity.ts',
     '.module.ts',
     'index.ts',
+    '.providers.ts',
   ],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
     prefix: '<rootDir>',
