@@ -1,54 +1,74 @@
-import { CreateUserDto } from '@modules/user/application/dtos';
-import { RoleModel, UserModel } from '@modules/user/domain/models';
-import { UserRepositoryPort } from '@modules/user/domain/ports';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/database';
-import { UserWithRoles } from './interfaces';
+import { CreateUserDto } from '@user/application/dtos';
+import { RoleModel, UserModel } from '@user/domain/models';
+import { UserRepositoryPort } from '@user/domain/ports';
 
 @Injectable()
 export class UserRepository implements UserRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string): Promise<UserModel | null> {
-    return this.mapToDomain(
-      await this.prisma.user.findUnique({ where: { email } }),
-    );
+    try {
+      return this.mapToDomain(
+        await this.prisma.user.findUnique({
+          where: { email },
+          include: { roles: true },
+        }),
+      );
+    } catch (error) {
+      throw this.prisma.handleDatabaseError(error);
+    }
   }
 
-  async findByIdWithRoles(userId: string): Promise<UserModel | null> {
-    return this.mapToDomain(
-      await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: { roles: true },
-      }),
-    );
+  async findById(userId: string): Promise<UserModel | null> {
+    try {
+      return this.mapToDomain(
+        await this.prisma.user.findUnique({
+          where: { id: userId },
+          include: { roles: true },
+        }),
+      );
+    } catch (error) {
+      throw this.prisma.handleDatabaseError(error);
+    }
   }
 
   async createUser(
     createUserDto: CreateUserDto,
     hashedPassword: string,
   ): Promise<UserModel> {
-    return this.mapToDomain(
-      await this.prisma.user.create({
-        data: {
-          email: createUserDto.email,
-          password: hashedPassword,
-          fullName: createUserDto.fullName,
-          avatarUrl: createUserDto.avatarUrl,
-          phoneNumber: createUserDto.phoneNumber,
-          isActive: true,
-          roles: {
-            connect: createUserDto.roles.map((role) => ({
-              name: role.toString(),
-            })),
+    try {
+      return this.mapToDomain(
+        await this.prisma.user.create({
+          data: {
+            email: createUserDto.email,
+            password: hashedPassword,
+            fullName: createUserDto.fullName,
+            phoneNumber: createUserDto.phoneNumber ?? null,
+            isActive: true,
+            roles: {
+              connect: createUserDto.roles.map((role) => ({
+                name: role.toString(),
+              })),
+            },
           },
-        },
-        include: { roles: true },
-      }),
-    );
+          include: { roles: true },
+        }),
+      );
+    } catch (error) {
+      throw this.prisma.handleDatabaseError(error);
+    }
   }
 
-  private mapToDomain(user?: UserWithRoles): UserModel | null {
+  /**
+   * Maps a UserWithRoles object to a UserModel.
+   * Converts the user's roles to RoleModel instances.
+   *
+   * @param user UserWithRoles object to map
+   * @returns A UserModel object if user is defined, null otherwise
+   */
+  private mapToDomain(user?: any): UserModel | null {
     return user
       ? new UserModel({
           ...user,

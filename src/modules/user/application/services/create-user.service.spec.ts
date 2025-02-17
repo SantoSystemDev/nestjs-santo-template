@@ -1,12 +1,12 @@
-import { RoleModel, UserModel } from '@modules/user/domain/models';
-import {
-  CreateUserServicePort,
-  HashServicePort,
-  UserRepositoryPort,
-} from '@modules/user/domain/ports';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { RoleEnum } from '../../domain/enums/role.enum';
+import { RoleEnum } from '@user/domain/enums/role.enum';
+import { RoleModel, UserModel } from '@user/domain/models';
+import {
+    CreateUserServicePort,
+    HashServicePort,
+    UserRepositoryPort,
+} from '@user/domain/ports';
 import { CreateUserDto, RoleResponseDto, UserResponseDto } from '../dtos';
 import { CreateUserService } from './create-user.service';
 
@@ -14,6 +14,8 @@ describe(CreateUserService.name, () => {
   let service: CreateUserServicePort;
   let repository: jest.Mocked<UserRepositoryPort>;
   let hashService: jest.Mocked<HashServicePort>;
+
+  const adminId = 'admin-123';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -23,7 +25,7 @@ describe(CreateUserService.name, () => {
           provide: UserRepositoryPort,
           useValue: {
             findByEmail: jest.fn(),
-            findByIdWithRoles: jest.fn(),
+            findById: jest.fn(),
             createUser: jest.fn(),
           },
         },
@@ -53,7 +55,6 @@ describe(CreateUserService.name, () => {
 
   describe('execute', () => {
     it('should create a new user successfully', async () => {
-      const adminId = 'admin-123';
       const createUserDto: CreateUserDto = {
         email: 'newuser@example.com',
         password: 'password123',
@@ -70,7 +71,7 @@ describe(CreateUserService.name, () => {
       });
 
       repository.findByEmail.mockResolvedValue(null);
-      repository.findByIdWithRoles.mockResolvedValue(adminUser);
+      repository.findById.mockResolvedValue(adminUser);
       hashService.hash.mockReturnValue('hashed-password');
       repository.createUser.mockResolvedValue(
         new UserModel({
@@ -85,7 +86,7 @@ describe(CreateUserService.name, () => {
       const result = await service.execute(createUserDto, adminId);
 
       expect(repository.findByEmail).toHaveBeenCalledWith(createUserDto.email);
-      expect(repository.findByIdWithRoles).toHaveBeenCalledWith(adminId);
+      expect(repository.findById).toHaveBeenCalledWith(adminId);
       expect(hashService.hash).toHaveBeenCalledWith(createUserDto.password);
       expect(repository.createUser).toHaveBeenCalledWith(
         createUserDto,
@@ -130,7 +131,7 @@ describe(CreateUserService.name, () => {
       });
 
       repository.findByEmail.mockResolvedValue(null);
-      repository.findByIdWithRoles.mockResolvedValue(nonAdminUser);
+      repository.findById.mockResolvedValue(nonAdminUser);
 
       await expect(
         service.execute(
@@ -146,7 +147,6 @@ describe(CreateUserService.name, () => {
     });
 
     it('should throw an error if hash fails', async () => {
-      const adminId = 'admin-123';
       const createUserDto = new CreateUserDto({
         email: 'newuser@example.com',
         password: 'Password123!',
@@ -163,7 +163,7 @@ describe(CreateUserService.name, () => {
       });
 
       repository.findByEmail.mockResolvedValue(null);
-      repository.findByIdWithRoles.mockResolvedValue(adminUser);
+      repository.findById.mockResolvedValue(adminUser);
       hashService.hash.mockImplementation(() => {
         throw new Error('Hashing failed');
       });
@@ -174,7 +174,6 @@ describe(CreateUserService.name, () => {
     });
 
     it('should throw an error if creating user in the database fails', async () => {
-      const adminId = 'admin-123';
       const createUserDto = new CreateUserDto({
         email: 'newuser@example.com',
         password: 'Password123!',
@@ -191,7 +190,7 @@ describe(CreateUserService.name, () => {
       });
 
       repository.findByEmail.mockResolvedValue(null);
-      repository.findByIdWithRoles.mockResolvedValue(adminUser);
+      repository.findById.mockResolvedValue(adminUser);
       hashService.hash.mockReturnValue('hashed-password');
       repository.createUser.mockRejectedValue(new Error('Database error'));
 
@@ -201,7 +200,6 @@ describe(CreateUserService.name, () => {
     });
 
     it('should throw an error if roles are empty', async () => {
-      const adminId = 'admin-123';
       const createUserDto = new CreateUserDto({
         email: 'newuser@example.com',
         password: 'Password123!',
@@ -215,7 +213,6 @@ describe(CreateUserService.name, () => {
     });
 
     it('should throw an error if roles are invalid', async () => {
-      const adminId = 'admin-123';
       const createUserDto = new CreateUserDto({
         email: 'newuser@example.com',
         password: 'Password123!',

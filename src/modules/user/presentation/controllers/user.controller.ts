@@ -1,17 +1,22 @@
-// import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
-import { CreateUserServicePort } from '@modules/user/domain/ports';
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { JwtAuthGuard } from '@auth/infrastructure/adapters/credentials';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
-import { CreateUserDto, UserResponseDto } from '../../application/dtos';
+import { AuthenticatedUser } from '@shared/decorators';
+import { CreateUserDto, UserResponseDto } from '@user/application/dtos';
+import { CreateUserServicePort } from '@user/domain/ports';
 
 @ApiBearerAuth()
-@Controller('users')
+@Controller('/users')
 export class UserController {
   constructor(private readonly service: CreateUserServicePort) {}
 
-  @Post()
-  // @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.CREATED)
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'User registered successfully',
@@ -43,11 +48,13 @@ export class UserController {
       },
     },
   })
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createUserDto: CreateUserDto,
-    // @Req() request: Request,
+    @AuthenticatedUser('userId') adminId: string,
   ): Promise<UserResponseDto> {
-    // const adminId = request.user['id'];
-    return this.service.execute(createUserDto, 'adminId');
+    return await this.service.execute(createUserDto, adminId);
   }
 }

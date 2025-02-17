@@ -1,15 +1,14 @@
-import { RoleEnum } from '@modules/user/domain/enums/role.enum';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ROLE_VALUES, RoleEnum } from '@user/domain/enums/role.enum';
 import {
-  ArrayNotEmpty,
-  IsArray,
-  IsEmail,
-  IsNotEmpty,
-  IsNumberString,
-  IsOptional,
-  IsPhoneNumber,
-  IsString,
-  MinLength,
+    ArrayUnique,
+    IsArray,
+    IsEmail,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    Matches,
+    MinLength,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -27,6 +26,7 @@ export class CreateUserDto {
   })
   @IsNotEmpty()
   @IsString()
+  @MinLength(6)
   password: string;
 
   @ApiProperty({
@@ -38,32 +38,24 @@ export class CreateUserDto {
   fullName: string;
 
   @ApiPropertyOptional({
-    description: 'The avatar URL of the user',
-    example: 'http://example.com/avatar.png',
-  })
-  @IsOptional()
-  @IsString()
-  avatarUrl?: string;
-
-  @ApiPropertyOptional({
     description:
       'The phone number of the user. It must follow the format: DDD + cellphone number, without spaces or special characters. Example: 11 91234-5678 = 11912345678',
     example: '11912345678',
   })
   @IsOptional()
-  @IsNumberString()
-  @MinLength(11)
-  @IsPhoneNumber('BR')
+  @Matches(/^\d{11}$/, {
+    message: 'Phone number must be exactly 11 digits (DDD + cellphone number)',
+  })
   phoneNumber?: string;
 
   @ApiProperty({
     description: 'The roles assigned to the user',
-    example: ['USER'],
+    example: ROLE_VALUES,
     enum: RoleEnum,
     isArray: true,
   })
   @IsArray({ each: true })
-  @ArrayNotEmpty()
+  @ArrayUnique()
   roles: RoleEnum[];
 
   constructor(data: Partial<CreateUserDto>) {

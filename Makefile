@@ -60,42 +60,42 @@ lint: ##@NESTJS Run formatting and linting
 .PHONY: gen
 gen: ##@PRISMA Generate Prisma client
 	@echo "$(CYAN)[PRISMA]$(RESET) Generating Prisma client..."
-	@npx prisma generate
+	@npm run generate
 	@echo "$(GREEN)[OK]$(RESET) Prisma client generated!"
 
 .PHONY: migrate-dev
 migrate-dev: ##@PRISMA Apply migrations in development
 	@echo "$(CYAN)[PRISMA]$(RESET) Applying migrations in development..."
-	@npx prisma migrate dev
+	@npm run migrate:dev
 	@echo "$(GREEN)[OK]$(RESET) Migrations applied!"
 
 .PHONY: migrate-deploy
 migrate-deploy: ##@PRISMA Deploy migrations to production
 	@echo "$(CYAN)[PRISMA]$(RESET) Deploying migrations to production..."
-	@npx prisma migrate deploy
+	@npm run migrate:deploy
 	@echo "$(GREEN)[OK]$(RESET) Migrations deployed!"
 
 .PHONY: studio
 studio: ##@PRISMA Open Prisma Studio
 	@echo "$(CYAN)[PRISMA]$(RESET) Opening Prisma Studio..."
-	@npx prisma studio
+	@npm run studio
 
 .PHONY: db-pull
 db-pull: ##@PRISMA Update Prisma schema from database
 	@echo "$(CYAN)[PRISMA]$(RESET) Updating Prisma schema from database..."
-	@npx prisma db pull
+	@npm run db:pull
 	@echo "$(GREEN)[OK]$(RESET) Prisma schema updated!"
 
 .PHONY: db-push
 db-push: ##@PRISMA Push Prisma schema to database
 	@echo "$(CYAN)[PRISMA]$(RESET) Pushing Prisma schema to database..."
-	@npx prisma db push
+	@npm run db:push
 	@echo "$(GREEN)[OK]$(RESET) Prisma schema pushed!"
 
 .PHONY: db-seed
 db-seed: ##@PRISMA Seed database with initial data
 	@echo "$(CYAN)[PRISMA]$(RESET) Seeding database with initial data..."
-	@npx prisma db seed
+	@npm run db:seed
 	@echo "$(GREEN)[OK]$(RESET) Database seeded!"
 
 ###################################################################################################

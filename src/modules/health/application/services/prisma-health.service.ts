@@ -10,7 +10,7 @@ export class PrismaHealthService {
   ) {}
 
   async check() {
-    return this.prismaHealthIndicator.pingCheck(
+    return await this.prismaHealthIndicator.pingCheck(
       'database',
       this.prismaService,
       {

@@ -1,13 +1,14 @@
-import { CreateUserDto, UserResponseDto } from '@modules/user/application/dtos';
-import { RoleEnum } from '@modules/user/domain/enums/role.enum';
-import { CreateUserServicePort } from '@modules/user/domain/ports';
-import { UserController } from '@modules/user/presentation/controllers';
+import { JwtAuthGuard } from '@auth/infrastructure/adapters/credentials';
 import {
-  ConflictException,
-  INestApplication,
-  UnauthorizedException,
+    ConflictException,
+    INestApplication,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CreateUserDto, UserResponseDto } from '@user/application/dtos';
+import { RoleEnum } from '@user/domain/enums/role.enum';
+import { CreateUserServicePort } from '@user/domain/ports';
+import { UserController } from '@user/presentation/controllers';
 import * as request from 'supertest';
 
 describe(UserController.name, () => {
@@ -23,7 +24,10 @@ describe(UserController.name, () => {
       providers: [
         { provide: CreateUserServicePort, useValue: mockUserService },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     app = module.createNestApplication();
     await app.init();
@@ -62,24 +66,27 @@ describe(UserController.name, () => {
     };
 
     it('should register a user successfully', async () => {
-      mockUserService.execute.mockResolvedValue(responseDto);
+      mockUserService.execute.mockResolvedValueOnce(responseDto);
 
       await request(app.getHttpServer())
         .post('/users')
+        .set('Authorization', `Bearer mock-token`)
         .send(validDto)
         .expect(201)
         .expect((res) => {
           expect(res.body).toEqual(responseDto);
+          expect(mockUserService.execute).toHaveBeenCalled();
         });
     });
 
     it('should return 409 if email is already in use', async () => {
-      mockUserService.execute.mockRejectedValue(
+      mockUserService.execute.mockRejectedValueOnce(
         new ConflictException('Email already in use'),
       );
 
       await request(app.getHttpServer())
         .post('/users')
+        .set('Authorization', `Bearer mock-token`)
         .send(validDto)
         .expect(409)
         .expect((res) => {
@@ -92,7 +99,7 @@ describe(UserController.name, () => {
     });
 
     it('should return 401 if user is unauthorized', async () => {
-      mockUserService.execute.mockRejectedValue(
+      mockUserService.execute.mockRejectedValueOnce(
         new UnauthorizedException(
           'You do not have permission to perform this action',
         ),
@@ -100,6 +107,7 @@ describe(UserController.name, () => {
 
       await request(app.getHttpServer())
         .post('/users')
+        .set('Authorization', `Bearer mock-token`)
         .send(validDto)
         .expect(401)
         .expect((res) => {

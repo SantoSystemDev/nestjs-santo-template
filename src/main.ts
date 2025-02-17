@@ -1,4 +1,5 @@
 import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -8,6 +9,18 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   const env = process.env.NODE_ENV ?? 'development';
   const logger = new Logger('Bootstrap');
+
+  const configService = app.get(ConfigService);
+  const logLevels = (configService.get<string>('LOG_LEVEL') || 'log,error')
+    .split(',')
+    .map((level) => level.trim()) as (
+    | 'log'
+    | 'error'
+    | 'warn'
+    | 'debug'
+    | 'verbose'
+  )[];
+  app.useLogger(logLevels);
 
   const config = new DocumentBuilder()
     .setTitle('Template Service API')

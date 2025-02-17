@@ -1,8 +1,9 @@
-import { RoleModel } from './RoleModel';
+import { RoleModel } from './role.model';
 
 export class UserModel {
   readonly id: string;
   readonly email: string;
+  readonly password: string;
   readonly fullName: string;
   readonly avatarUrl?: string;
   readonly phoneNumber?: string;

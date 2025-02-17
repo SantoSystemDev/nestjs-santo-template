@@ -21,6 +21,9 @@
     "importsNotUsedAsValues": "remove",
     "paths": {
       "@modules/*": ["src/modules/*"],
+      "@auth/*": ["src/modules/auth/*"],
+      "@health/*": ["src/modules/health/*"],
+      "@user/*": ["src/modules/user/*"],
       "@shared/*": ["src/shared/*"]
     }
   },

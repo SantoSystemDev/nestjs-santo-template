@@ -11,7 +11,7 @@ export class MemoryHealthService {
     const MAX_RSS_USAGE = 150 * 1024 * 1024; // 150 MB
 
     // Perform health check for both heap and RSS
-    return Promise.all([
+    return await Promise.all([
       this.memoryHealthIndicator.checkHeap('memory_heap', MAX_HEAP_USAGE),
       this.memoryHealthIndicator.checkRSS('memory_rss', MAX_RSS_USAGE),
     ]);

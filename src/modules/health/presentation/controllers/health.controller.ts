@@ -1,14 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
+import { HealthService } from '@health/application/services';
+import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HealthCheck } from '@nestjs/terminus';
-import { HealthService } from '../../application/services';
 
-@Controller('health')
+@Controller('/health')
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
-  @Get()
-  @HealthCheck()
   @ApiOperation({
     summary: 'Health Check',
     description:
@@ -22,7 +20,10 @@ export class HealthController {
     status: 503,
     description: 'The application is not healthy.',
   })
+  @Get()
+  @HealthCheck()
+  @HttpCode(HttpStatus.OK)
   async check() {
-    return this.healthService.check();
+    return await this.healthService.check();
   }
 }

@@ -1,8 +1,16 @@
 import { Module } from '@nestjs/common';
-import { HealthModule, UserModule } from './modules';
+import { ConfigModule } from '@nestjs/config';
+import { AuthModule, HealthModule, UserModule } from './modules';
 
 @Module({
-  imports: [HealthModule, UserModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    HealthModule,
+    UserModule,
+    AuthModule,
+  ],
   controllers: [],
   providers: [],
 })

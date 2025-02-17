@@ -14,7 +14,7 @@ export class HealthService {
   ) {}
 
   async check() {
-    return this.healthCheckService.check([
+    return await this.healthCheckService.check([
       // Check Prisma
       async () => this.prismaHealthService.check(),
       // Check Disk
