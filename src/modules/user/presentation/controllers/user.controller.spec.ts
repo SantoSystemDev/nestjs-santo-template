@@ -1,8 +1,8 @@
 import { JwtAuthGuard } from '@auth/infrastructure/adapters/credentials';
 import {
-    ConflictException,
-    INestApplication,
-    UnauthorizedException,
+  ConflictException,
+  INestApplication,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateUserDto, UserResponseDto } from '@user/application/dtos';

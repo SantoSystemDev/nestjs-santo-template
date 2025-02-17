@@ -3,26 +3,26 @@ import { UserModel } from '../models';
 
 export abstract class UserRepositoryPort {
   /**
-   * Finds a user by its email.
+   * Find a user by email.
    *
-   * @param email Email of the user
-   * @returns The user if found, null otherwise
+   * @param email - User's email
+   * @returns The user or null if not found
    */
   abstract findByEmail(email: string): Promise<UserModel | null>;
 
   /**
-   * Finds a user by its unique identifier.
+   * Find a user by ID.
    *
-   * @param userId Unique identifier of the user
-   * @returns The user if found, null otherwise
+   * @param userId - User's unique ID
+   * @returns The user or null if not found
    */
   abstract findById(userId: string): Promise<UserModel | null>;
 
   /**
-   * Creates a new user in the database.
+   * Create a new user.
    *
-   * @param createUserDto Data to create the user
-   * @param hashedPassword Hashed password to store in the database
+   * @param createUserDto - User data
+   * @param hashedPassword - User's hashed password
    * @returns The created user
    */
   abstract createUser(

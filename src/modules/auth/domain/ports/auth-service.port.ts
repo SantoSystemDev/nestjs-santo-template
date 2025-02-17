@@ -3,20 +3,20 @@ import { JwtPayloadModel } from '@auth/domain/models';
 
 export abstract class AuthServicePort {
   /**
-   * Signup a new user with the given information.
+   * Registers a new user.
    *
-   * @param signupDto Information about the user to be created
-   * @returns A promise that resolves to an object containing an access token for the new user
-   * @throws ConflictException if the email is already in use
+   * @param signupDto - User information to be created.
+   * @returns Object with the user's access token.
+   * @throws ConflictException if email is already in use.
    */
   abstract signup(signupDto: SignupDto): Promise<{ accessToken: string }>;
 
   /**
-   * Login with the given credentials.
+   * Authenticates a user and returns an access token.
    *
-   * @param loginDto - The login data transfer object containing user's email and password
-   * @returns A promise that resolves to an object containing an access token for the authenticated user
-   * @throws UnauthorizedException if the credentials are invalid
+   * @param payload - JWT payload containing user information.
+   * @returns Object with the access token.
+   * @throws UnauthorizedException if credentials are invalid.
    */
   abstract login(payload: JwtPayloadModel): Promise<{ accessToken: string }>;
 }

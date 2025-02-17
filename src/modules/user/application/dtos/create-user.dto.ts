@@ -1,14 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ROLE_VALUES, RoleEnum } from '@user/domain/enums/role.enum';
 import {
-    ArrayUnique,
-    IsArray,
-    IsEmail,
-    IsNotEmpty,
-    IsOptional,
-    IsString,
-    Matches,
-    MinLength,
+  ArrayUnique,
+  IsArray,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
 } from 'class-validator';
 
 export class CreateUserDto {

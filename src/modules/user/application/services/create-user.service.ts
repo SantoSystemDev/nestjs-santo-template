@@ -1,15 +1,15 @@
 import {
-    ConflictException,
-    Injectable,
-    Logger,
-    UnauthorizedException,
+  ConflictException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { RoleModel } from '@user/domain/models';
 import {
-    CreateUserServicePort,
-    HashServicePort,
-    UserRepositoryPort,
+  CreateUserServicePort,
+  HashServicePort,
+  UserRepositoryPort,
 } from '@user/domain/ports';
 import { CreateUserDto, RoleResponseDto, UserResponseDto } from '../dtos';
 

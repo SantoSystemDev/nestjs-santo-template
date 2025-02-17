@@ -1,12 +1,9 @@
 import { Provider } from '@nestjs/common';
+import { CreateUserService, HashService } from '@user/application/services';
 import {
-    CreateUserService,
-    HashService,
-} from '@user/application/services';
-import {
-    CreateUserServicePort,
-    HashServicePort,
-    UserRepositoryPort,
+  CreateUserServicePort,
+  HashServicePort,
+  UserRepositoryPort,
 } from '@user/domain/ports';
 import { UserRepository } from '@user/infrastructure/adapters/repositories';
 

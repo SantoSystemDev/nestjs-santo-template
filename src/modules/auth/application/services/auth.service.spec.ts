@@ -5,10 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { RoleModel, UserModel } from '@user/domain/models';
-import {
-    HashServicePort,
-    UserRepositoryPort,
-} from '@user/domain/ports';
+import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
 
 describe(AuthService.name, () => {
   let service: AuthService;
