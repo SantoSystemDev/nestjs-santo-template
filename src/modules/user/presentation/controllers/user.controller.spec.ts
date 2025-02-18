@@ -70,7 +70,7 @@ describe(UserController.name, () => {
 
       await request(app.getHttpServer())
         .post('/users')
-        .set('Authorization', `Bearer mock-token`)
+        .set('Authorization', 'Bearer mock-token')
         .send(validDto)
         .expect(201)
         .expect((res) => {
@@ -86,7 +86,7 @@ describe(UserController.name, () => {
 
       await request(app.getHttpServer())
         .post('/users')
-        .set('Authorization', `Bearer mock-token`)
+        .set('Authorization', 'Bearer mock-token')
         .send(validDto)
         .expect(409)
         .expect((res) => {
@@ -107,7 +107,7 @@ describe(UserController.name, () => {
 
       await request(app.getHttpServer())
         .post('/users')
-        .set('Authorization', `Bearer mock-token`)
+        .set('Authorization', 'Bearer mock-token')
         .send(validDto)
         .expect(401)
         .expect((res) => {

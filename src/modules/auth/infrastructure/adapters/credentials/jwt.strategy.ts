@@ -1,5 +1,5 @@
 import { JwtPayloadModel } from '@auth/domain/models';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { UserRepositoryPort } from '@user/domain/ports';
@@ -7,6 +7,8 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor(private readonly userRepository: UserRepositoryPort) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -16,12 +18,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayloadModel): Promise<JwtPayloadModel> {
-    const user = await this.userRepository.findById(payload.userId);
+    this.logger.debug(`Validating JWT for userId: ${payload.userId}`);
 
+    const user = await this.userRepository.findById(payload.userId);
     if (!user || !user.isActive) {
+      this.logger.error(`JWT validation failed - userId: ${payload.userId}`);
       throw new UnauthorizedException('Invalid token');
     }
 
+    this.logger.log(`JWT validated successfully - userId: ${payload.userId}`);
     return {
       userId: user.id,
       email: user.email,

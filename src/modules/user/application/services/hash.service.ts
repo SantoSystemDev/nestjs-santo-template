@@ -7,12 +7,12 @@ export class HashService implements HashServicePort {
   private readonly logger = new Logger(HashService.name);
 
   hash(password: string): string {
-    this.logger.debug(`Hashing password`);
+    this.logger.debug('Hashing password');
     return bcrypt.hashSync(password, 10);
   }
 
   compare(password: string, hashedPassword: string): boolean {
-    this.logger.debug(`Comparing passwords`);
+    this.logger.debug('Comparing passwords');
     return bcrypt.compareSync(password, hashedPassword);
   }
 }

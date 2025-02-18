@@ -15,7 +15,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AuthController } from './auth.controller';
 
-describe('AuthController', () => {
+describe(AuthController.name, () => {
   let app: INestApplication;
   let service: AuthServicePort;
 
@@ -161,7 +161,7 @@ describe('AuthController', () => {
     it('should return 200 and message on protected route access', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/protected')
-        .set('Authorization', `Bearer mockJwtToken`)
+        .set('Authorization', 'Bearer mockJwtToken')
         .expect(200);
 
       expect(response.body.message).toBe('You are authorized!');

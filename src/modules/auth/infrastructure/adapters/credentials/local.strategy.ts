@@ -1,5 +1,5 @@
 import { JwtPayloadModel } from '@auth/domain/models';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
@@ -7,6 +7,8 @@ import { Strategy } from 'passport-local';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(LocalStrategy.name);
+
   constructor(
     private readonly userRepository: UserRepositoryPort,
     private readonly hashService: HashServicePort,
@@ -17,16 +19,19 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(email: string, password: string): Promise<JwtPayloadModel> {
-    const user = await this.userRepository.findByEmail(email);
+    this.logger.debug('Attempting local authentication');
 
+    const user = await this.userRepository.findByEmail(email);
     if (
       !user ||
       !user.isActive ||
       !this.hashService.compare(password, user.password)
     ) {
+      this.logger.error('Local authentication failed');
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    this.logger.log(`Local authentication successful - userId: ${user.id}`);
     return {
       userId: user.id,
       email: user.email,

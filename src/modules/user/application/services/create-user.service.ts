@@ -32,7 +32,7 @@ export class CreateUserService implements CreateUserServicePort {
     await this.verifyEmailAndAdminPrivileges(adminId, email);
 
     const hashedPassword = this.hashService.hash(password);
-    this.logger.debug(`Password hashed successfully`);
+    this.logger.debug('Password hashed successfully');
 
     const newUser = await this.repository.createUser(
       createUserDto,
@@ -82,7 +82,7 @@ export class CreateUserService implements CreateUserServicePort {
     ]);
 
     if (existingUser) {
-      this.logger.error(`Attempt to create duplicate user`);
+      this.logger.error('Attempt to create duplicate user');
       throw new ConflictException('Email already in use');
     }
 

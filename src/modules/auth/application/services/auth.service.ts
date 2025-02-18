@@ -23,12 +23,12 @@ export class AuthService implements AuthServicePort {
   ) {}
 
   async signup(signupDto: SignupDto): Promise<{ accessToken: string }> {
-    this.logger.debug(`Attempting to sign up user`);
+    this.logger.debug('Attempting to sign up user');
 
     await this.verifyEmail(signupDto.email);
 
     const hashedPassword = this.hashService.hash(signupDto.password);
-    this.logger.debug(`Password hashed successfully`);
+    this.logger.debug('Password hashed successfully');
 
     const createUserDto: CreateUserDto = {
       email: signupDto.email,
