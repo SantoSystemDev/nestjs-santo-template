@@ -1,3 +1,4 @@
+import { UserWithRoles } from '@modules/user/infrastructure/adapters/repositories/interfaces';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/database';
 import { CreateUserDto } from '@user/application/dtos';
@@ -68,7 +69,7 @@ export class UserRepository implements UserRepositoryPort {
    * @param user UserWithRoles object to map
    * @returns A UserModel object if user is defined, null otherwise
    */
-  private mapToDomain(user?: any): UserModel | null {
+  private mapToDomain(user?: UserWithRoles): UserModel | null {
     return user
       ? new UserModel({
           ...user,

@@ -56,10 +56,10 @@ export class PrismaService
           throw new ConflictException(
             'Duplicate entry: unique constraint failed',
           );
-        case 'P2025':
-          throw new NotFoundException('Record not found');
         case 'P2003':
           throw new BadRequestException('Foreign key constraint failed');
+        case 'P2025':
+          throw new NotFoundException('Record not found');
         default:
           throw new InternalServerErrorException('Unexpected database error');
       }

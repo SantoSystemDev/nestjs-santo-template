@@ -1,7 +1,12 @@
 import { SignupDto } from '@auth/application/dtos';
 import { JwtPayloadModel } from '@auth/domain/models';
 import { AuthServicePort } from '@auth/domain/ports';
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '@user/application/dtos';
 import { RoleEnum } from '@user/domain/enums/role.enum';
@@ -46,6 +51,7 @@ export class AuthService implements AuthServicePort {
   }
 
   async login(payload: JwtPayloadModel): Promise<{ accessToken: string }> {
+    await this.verifyId(payload.userId);
     this.logger.log(`User logged in successfully - userId: ${payload.userId}`);
     return { accessToken: this.jwtService.sign(payload) };
   }
@@ -57,13 +63,34 @@ export class AuthService implements AuthServicePort {
    * @throws ConflictException if the email is already in use
    */
   private async verifyEmail(email: string): Promise<void> {
-    this.logger.debug(`Verifying email availability`);
+    this.logger.debug('Checking if the email is already registered');
 
     const existingUser = await this.userRepository.findByEmail(email);
-
     if (existingUser) {
-      this.logger.error(`Signup attempt with already registered email`);
+      this.logger.error('Signup attempt failed - email already in use');
       throw new ConflictException('Email already in use');
     }
+
+    this.logger.debug('Email is available for registration');
+  }
+
+  /**
+   * Verifies that the user ID is valid and the user is active.
+   *
+   * @param userId ID of the user to verify
+   * @throws UnauthorizedException if the user ID is invalid or the user is not active
+   */
+  private async verifyId(userId: string): Promise<void> {
+    this.logger.debug(
+      `Checking if user exists and is active - userId: ${userId}`,
+    );
+
+    const existingUser = await this.userRepository.findById(userId);
+    if (!existingUser || !existingUser.isActive) {
+      this.logger.error(`Unauthorized access attempt - userId: ${userId}`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    this.logger.debug(`User validation successful - userId: ${userId}`);
   }
 }
