@@ -1,7 +1,7 @@
 import { UserWithRoles } from '@modules/user/infrastructure/adapters/repositories/interfaces';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/database';
-import { CreateUserDto } from '@user/application/dtos';
+import { CreateUserDto, UpdateUserDto } from '@user/application/dtos';
 import { RoleModel, UserModel } from '@user/domain/models';
 import { UserRepositoryPort } from '@user/domain/ports';
 
@@ -43,9 +43,9 @@ export class UserRepository implements UserRepositoryPort {
       return this.mapToDomain(
         await this.prisma.user.create({
           data: {
-            email: createUserDto.email,
+            email: createUserDto.email.trim().toLowerCase(),
             password: hashedPassword,
-            fullName: createUserDto.fullName,
+            fullName: createUserDto.fullName.trim().toUpperCase(),
             phoneNumber: createUserDto.phoneNumber ?? null,
             isActive: true,
             roles: {
@@ -55,6 +55,53 @@ export class UserRepository implements UserRepositoryPort {
             },
           },
           include: { roles: true },
+        }),
+      );
+    } catch (error) {
+      throw this.prisma.handleDatabaseError(error);
+    }
+  }
+
+  async update(user: UpdateUserDto & { id: string }): Promise<UserModel> {
+    try {
+      return this.mapToDomain(
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            email: user.email.trim().toLowerCase(),
+            fullName: user.fullName.trim().toUpperCase(),
+            phoneNumber: user.phoneNumber ?? null,
+            isActive: user.isActive,
+          },
+          include: { roles: true },
+        }),
+      );
+    } catch (error) {
+      throw this.prisma.handleDatabaseError(error);
+    }
+  }
+
+  async delete(userId: string): Promise<void> {
+    try {
+      await this.prisma.user.delete({
+        where: { id: userId },
+      });
+    } catch (error) {
+      throw this.prisma.handleDatabaseError(error);
+    }
+  }
+
+  async findByEmailAndNotId(
+    email: string,
+    excludeUserId: string,
+  ): Promise<UserModel | null> {
+    try {
+      return this.mapToDomain(
+        await this.prisma.user.findFirst({
+          where: {
+            email,
+            id: { not: excludeUserId },
+          },
         }),
       );
     } catch (error) {

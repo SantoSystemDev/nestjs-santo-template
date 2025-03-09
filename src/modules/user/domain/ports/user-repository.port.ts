@@ -1,5 +1,5 @@
-import { CreateUserDto } from '@user/application/dtos';
-import { UserModel } from '../models';
+import { UserModel } from '@modules/user/domain/models';
+import { CreateUserDto, UpdateUserDto } from '@user/application/dtos';
 
 export abstract class UserRepositoryPort {
   /**
@@ -21,7 +21,7 @@ export abstract class UserRepositoryPort {
   /**
    * Create a new user.
    *
-   * @param createUserDto - User data
+   * @param createUserDto - New user data
    * @param hashedPassword - User's hashed password
    * @returns The created user
    */
@@ -29,4 +29,31 @@ export abstract class UserRepositoryPort {
     createUserDto: CreateUserDto,
     hashedPassword: string,
   ): Promise<UserModel>;
+
+  /**
+   * Update an existent user.
+   *
+   * @param user - User data
+   * @returns The updated user
+   */
+  abstract update(user: UpdateUserDto & { id: string }): Promise<UserModel>;
+
+  /**
+   * Delete a user by ID.
+   *
+   * @param userId - User's unique ID
+   */
+  abstract delete(userId: string): Promise<void>;
+
+  /**
+   * Find a user by email that does not have the given ID.
+   *
+   * @param email - User's email
+   * @param excludeUserId - User ID to exclude from search
+   * @returns The user or null if not found
+   */
+  abstract findByEmailAndNotId(
+    email: string,
+    excludeUserId: string,
+  ): Promise<UserModel | null>;
 }

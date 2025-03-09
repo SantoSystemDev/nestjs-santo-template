@@ -8,13 +8,13 @@ export class UserModel {
   readonly avatarUrl?: string;
   readonly phoneNumber?: string;
   readonly isActive: boolean;
-  readonly roles: RoleModel[] = [];
+  readonly roles?: RoleModel[] = [];
 
   constructor(data: Partial<UserModel>) {
     Object.assign(this, data);
   }
 
   hasRole(roleName: string): boolean {
-    return this.roles.some((role) => role.name === roleName);
+    return this.roles?.some((role) => role.name === roleName);
   }
 }

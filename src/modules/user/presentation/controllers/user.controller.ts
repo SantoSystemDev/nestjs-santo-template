@@ -1,60 +1,106 @@
 import { JwtAuthGuard } from '@auth/infrastructure/adapters/credentials';
+import { ApiUserPost } from '@modules/user/presentation/controllers/user.swagger';
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthenticatedUser } from '@shared/decorators';
-import { CreateUserDto, UserResponseDto } from '@user/application/dtos';
-import { CreateUserServicePort } from '@user/domain/ports';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserResponseDto,
+} from '@user/application/dtos';
+import {
+  CreateUserServicePort,
+  DeleteUserServicePort,
+  UpdateUserServicePort,
+} from '@user/domain/ports';
 
 @ApiBearerAuth()
 @Controller('/users')
 export class UserController {
-  constructor(private readonly service: CreateUserServicePort) {}
+  constructor(
+    private readonly createUserService: CreateUserServicePort,
+    private readonly updateUserService: UpdateUserServicePort,
+    private readonly deleteUserService: DeleteUserServicePort,
+  ) {}
 
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'User registered successfully',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.CONFLICT,
-    description: 'Email already in use',
-    content: {
-      'application/json': {
-        example: {
-          statusCode: HttpStatus.CONFLICT,
-          message: 'Email already in use',
-          error: 'Conflict',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'You do not have permission to perform this action',
-    content: {
-      'application/json': {
-        example: {
-          statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'You do not have permission to perform this action',
-          error: 'Unauthorized',
-        },
-      },
-    },
-  })
   @Post()
+  @ApiUserPost()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createUserDto: CreateUserDto,
     @AuthenticatedUser('userId') adminId: string,
   ): Promise<UserResponseDto> {
-    return await this.service.execute(createUserDto, adminId);
+    return await this.createUserService.execute(createUserDto, adminId);
+  }
+
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User updated successfully',
+    type: UserResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found',
+    content: {
+      'application/json': {
+        example: {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'User not found',
+          error: 'Not Found',
+        },
+      },
+    },
+  })
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @AuthenticatedUser('userId') loggedUserId: string,
+  ): Promise<UserResponseDto> {
+    return await this.updateUserService.execute(
+      id,
+      updateUserDto,
+      loggedUserId,
+    );
+  }
+
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'User deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found',
+    content: {
+      'application/json': {
+        example: {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'User not found',
+          error: 'Not Found',
+        },
+      },
+    },
+  })
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(
+    @Param('id') id: string,
+    @AuthenticatedUser('userId') adminId: string,
+  ): Promise<void> {
+    return await this.deleteUserService.execute(id, adminId);
   }
 }

@@ -8,7 +8,7 @@ export class HashService implements HashServicePort {
 
   hash(password: string): string {
     this.logger.debug('Hashing password');
-    return bcrypt.hashSync(password, 10);
+    return bcrypt.hashSync(password.trim(), 10);
   }
 
   compare(password: string, hashedPassword: string): boolean {

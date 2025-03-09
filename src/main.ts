@@ -26,9 +26,14 @@ async function bootstrap() {
     .setTitle('Template Service API')
     .setDescription('The Template Service API description')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
+    .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
+  SwaggerModule.setup('swagger', app, documentFactory, {
+    jsonDocumentUrl: 'swagger/json',
+    yamlDocumentUrl: 'swagger/yaml',
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -49,7 +54,9 @@ async function bootstrap() {
 
   if (env === 'development') {
     logger.log(`🌍 Root:     http://localhost:${port}/`);
-    logger.log(`📄 Swagger:  http://localhost:${port}/api`);
+    logger.log(`📄 Swagger API:  http://localhost:${port}/api`);
+    logger.log(`📄 Swagger JSON:  http://localhost:${port}/swagger/json`);
+    logger.log(`📄 Swagger YAML:  http://localhost:${port}/swagger/yaml`);
   }
 }
 

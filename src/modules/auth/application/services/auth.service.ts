@@ -25,7 +25,7 @@ export class AuthService implements AuthServicePort {
   async signup(signupDto: SignupDto): Promise<{ accessToken: string }> {
     this.logger.debug('Attempting to sign up user');
 
-    await this.verifyEmail(signupDto.email);
+    await this.verifyEmailIsAvailable(signupDto.email);
 
     const hashedPassword = this.hashService.hash(signupDto.password);
     this.logger.debug('Password hashed successfully');
@@ -51,18 +51,12 @@ export class AuthService implements AuthServicePort {
   }
 
   async login(payload: JwtPayloadModel): Promise<{ accessToken: string }> {
-    await this.verifyId(payload.userId);
+    await this.verifyUserIsActive(payload.userId);
     this.logger.log(`User logged in successfully - userId: ${payload.userId}`);
     return { accessToken: this.jwtService.sign(payload) };
   }
 
-  /**
-   * Verifies that the email is not already in use.
-   *
-   * @param email Email to check
-   * @throws ConflictException if the email is already in use
-   */
-  private async verifyEmail(email: string): Promise<void> {
+  private async verifyEmailIsAvailable(email: string): Promise<void> {
     this.logger.debug('Checking if the email is already registered');
 
     const existingUser = await this.userRepository.findByEmail(email);
@@ -74,13 +68,7 @@ export class AuthService implements AuthServicePort {
     this.logger.debug('Email is available for registration');
   }
 
-  /**
-   * Verifies that the user ID is valid and the user is active.
-   *
-   * @param userId ID of the user to verify
-   * @throws UnauthorizedException if the user ID is invalid or the user is not active
-   */
-  private async verifyId(userId: string): Promise<void> {
+  private async verifyUserIsActive(userId: string): Promise<void> {
     this.logger.debug(
       `Checking if user exists and is active - userId: ${userId}`,
     );

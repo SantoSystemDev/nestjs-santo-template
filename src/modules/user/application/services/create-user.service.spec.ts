@@ -1,3 +1,8 @@
+import {
+  CreateUserDto,
+  RoleResponseDto,
+  UserResponseDto,
+} from '@modules/user/application/dtos';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoleEnum } from '@user/domain/enums/role.enum';
@@ -7,7 +12,6 @@ import {
   HashServicePort,
   UserRepositoryPort,
 } from '@user/domain/ports';
-import { CreateUserDto, RoleResponseDto, UserResponseDto } from '../dtos';
 import { CreateUserService } from './create-user.service';
 
 describe(CreateUserService.name, () => {
@@ -70,8 +74,8 @@ describe(CreateUserService.name, () => {
         roles: [new RoleModel({ id: 'role-1', name: RoleEnum.ADMIN })],
       });
 
-      repository.findByEmail.mockResolvedValue(null);
       repository.findById.mockResolvedValue(adminUser);
+      repository.findByEmail.mockResolvedValue(null);
       hashService.hash.mockReturnValue('hashed-password');
       repository.createUser.mockResolvedValue(
         new UserModel({
@@ -85,8 +89,8 @@ describe(CreateUserService.name, () => {
 
       const result = await service.execute(createUserDto, adminId);
 
-      expect(repository.findByEmail).toHaveBeenCalledWith(createUserDto.email);
       expect(repository.findById).toHaveBeenCalledWith(adminId);
+      expect(repository.findByEmail).toHaveBeenCalledWith(createUserDto.email);
       expect(hashService.hash).toHaveBeenCalledWith(createUserDto.password);
       expect(repository.createUser).toHaveBeenCalledWith(
         createUserDto,
@@ -100,6 +104,15 @@ describe(CreateUserService.name, () => {
     });
 
     it('should throw ConflictException if email is already in use', async () => {
+      const adminUser = new UserModel({
+        id: adminId,
+        email: 'admin@example.com',
+        fullName: 'Admin User',
+        isActive: true,
+        roles: [new RoleModel({ id: 'role-1', name: RoleEnum.ADMIN })],
+      });
+
+      repository.findById.mockResolvedValue(adminUser);
       repository.findByEmail.mockResolvedValue(
         new UserModel({
           id: 'user-123',
@@ -130,8 +143,23 @@ describe(CreateUserService.name, () => {
         roles: [new RoleModel({ id: 'role-3', name: RoleEnum.USER })],
       });
 
-      repository.findByEmail.mockResolvedValue(null);
       repository.findById.mockResolvedValue(nonAdminUser);
+
+      await expect(
+        service.execute(
+          new CreateUserDto({
+            email: 'new@example.com',
+            password: '123',
+            fullName: 'Test',
+            roles: [RoleEnum.USER],
+          }),
+          'user-123',
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if admin user not found', async () => {
+      repository.findById.mockResolvedValue(null);
 
       await expect(
         service.execute(
@@ -162,8 +190,8 @@ describe(CreateUserService.name, () => {
         roles: [new RoleModel({ id: 'role-1', name: RoleEnum.ADMIN })],
       });
 
-      repository.findByEmail.mockResolvedValue(null);
       repository.findById.mockResolvedValue(adminUser);
+      repository.findByEmail.mockResolvedValue(null);
       hashService.hash.mockImplementation(() => {
         throw new Error('Hashing failed');
       });
@@ -189,8 +217,8 @@ describe(CreateUserService.name, () => {
         roles: [new RoleModel({ id: 'role-1', name: RoleEnum.ADMIN })],
       });
 
-      repository.findByEmail.mockResolvedValue(null);
       repository.findById.mockResolvedValue(adminUser);
+      repository.findByEmail.mockResolvedValue(null);
       hashService.hash.mockReturnValue('hashed-password');
       repository.createUser.mockRejectedValue(new Error('Database error'));
 
