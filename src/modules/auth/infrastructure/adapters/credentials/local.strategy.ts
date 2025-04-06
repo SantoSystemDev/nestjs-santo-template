@@ -19,7 +19,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(email: string, password: string): Promise<JwtPayloadModel> {
-    this.logger.debug('Attempting local authentication');
+    this.logger.log('Attempting local authentication');
 
     const user = await this.userRepository.findByEmail(email);
     if (

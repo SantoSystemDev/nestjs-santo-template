@@ -18,7 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayloadModel): Promise<JwtPayloadModel> {
-    this.logger.debug(`Validating JWT for userId: ${payload.userId}`);
+    this.logger.log(`Validating JWT for userId: ${payload.userId}`);
 
     const user = await this.userRepository.findById(payload.userId);
     if (!user || !user.isActive) {

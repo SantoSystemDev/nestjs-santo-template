@@ -22,6 +22,7 @@ export class UpdateUserService implements UpdateUserServicePort {
   async execute(
     id: string,
     updateUserDto: UpdateUserDto,
+    loggedUserId: string,
   ): Promise<UserResponseDto> {
     this.logger.log(`Updating user - userId: ${id}`);
 
@@ -59,7 +60,7 @@ export class UpdateUserService implements UpdateUserServicePort {
   }
 
   private async verifyUserExists(userId: string): Promise<UserModel> {
-    this.logger.debug(`Checking if user exists - userId: ${userId}`);
+    this.logger.log(`Checking if user exists - userId: ${userId}`);
 
     const existingUser = await this.repository.findById(userId);
     if (!existingUser) {
@@ -67,7 +68,7 @@ export class UpdateUserService implements UpdateUserServicePort {
       throw new NotFoundException('User not found');
     }
 
-    this.logger.debug(`User validation successful - userId: ${userId}`);
+    this.logger.log(`User validation successful - userId: ${userId}`);
     return existingUser;
   }
 
@@ -75,7 +76,7 @@ export class UpdateUserService implements UpdateUserServicePort {
     email: string,
     id: string,
   ): Promise<void> {
-    this.logger.debug('Checking if the email is already registered');
+    this.logger.log('Checking if the email is already registered');
 
     const existingUser = await this.repository.findByEmailAndNotId(email, id);
     if (existingUser) {
@@ -83,6 +84,6 @@ export class UpdateUserService implements UpdateUserServicePort {
       throw new ConflictException('Email already in use');
     }
 
-    this.logger.debug('Email is available for registration');
+    this.logger.log('Email is available for registration');
   }
 }

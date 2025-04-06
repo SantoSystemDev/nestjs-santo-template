@@ -36,7 +36,7 @@ export class CreateUserService implements CreateUserServicePort {
     await this.verifyAdminPermissionsAndEmailIsAvailable(adminId, email);
 
     const hashedPassword = this.hashService.hash(password);
-    this.logger.debug('Password hashed successfully');
+    this.logger.log('Password hashed successfully');
 
     const newUser = await this.repository.createUser(
       createUserDto,

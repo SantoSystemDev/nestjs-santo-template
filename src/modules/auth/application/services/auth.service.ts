@@ -23,12 +23,12 @@ export class AuthService implements AuthServicePort {
   ) {}
 
   async signup(signupDto: SignupDto): Promise<{ accessToken: string }> {
-    this.logger.debug('Attempting to sign up user');
+    this.logger.log('Attempting to sign up user');
 
     await this.verifyEmailIsAvailable(signupDto.email);
 
     const hashedPassword = this.hashService.hash(signupDto.password);
-    this.logger.debug('Password hashed successfully');
+    this.logger.log('Password hashed successfully');
 
     const createUserDto: CreateUserDto = {
       email: signupDto.email,
@@ -57,7 +57,7 @@ export class AuthService implements AuthServicePort {
   }
 
   private async verifyEmailIsAvailable(email: string): Promise<void> {
-    this.logger.debug('Checking if the email is already registered');
+    this.logger.log('Checking if the email is already registered');
 
     const existingUser = await this.userRepository.findByEmail(email);
     if (existingUser) {
@@ -65,11 +65,11 @@ export class AuthService implements AuthServicePort {
       throw new ConflictException('Email already in use');
     }
 
-    this.logger.debug('Email is available for registration');
+    this.logger.log('Email is available for registration');
   }
 
   private async verifyUserIsActive(userId: string): Promise<void> {
-    this.logger.debug(
+    this.logger.log(
       `Checking if user exists and is active - userId: ${userId}`,
     );
 
@@ -79,6 +79,6 @@ export class AuthService implements AuthServicePort {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    this.logger.debug(`User validation successful - userId: ${userId}`);
+    this.logger.log(`User validation successful - userId: ${userId}`);
   }
 }
