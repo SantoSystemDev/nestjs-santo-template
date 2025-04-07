@@ -16,7 +16,7 @@ describe(PrismaService.name, () => {
     const mockPrismaService = {
       $connect: jest.fn().mockResolvedValue(undefined),
       $disconnect: jest.fn().mockResolvedValue(undefined),
-      $transaction: jest.fn().mockResolvedValue('transaction result'),
+      $transaction: jest.fn((callback) => callback()),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -32,6 +32,7 @@ describe(PrismaService.name, () => {
     service = module.get<PrismaService>(PrismaService);
     service.$connect = mockPrismaService.$connect;
     service.$disconnect = mockPrismaService.$disconnect;
+    service.$transaction = mockPrismaService.$transaction;
   });
 
   afterAll(async () => {

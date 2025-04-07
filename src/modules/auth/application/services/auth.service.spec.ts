@@ -19,6 +19,9 @@ describe(AuthService.name, () => {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       createUser: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      findByEmailAndNotId: jest.fn(),
     };
 
     const hashServiceMock: jest.Mocked<HashServicePort> = {

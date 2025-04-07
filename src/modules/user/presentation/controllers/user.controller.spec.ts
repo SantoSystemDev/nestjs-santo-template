@@ -7,14 +7,18 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateUserDto, UserResponseDto } from '@user/application/dtos';
 import { RoleEnum } from '@user/domain/enums/role.enum';
-import { CreateUserServicePort } from '@user/domain/ports';
+import {
+  CreateUserServicePort,
+  DeleteUserServicePort,
+  UpdateUserServicePort,
+} from '@user/domain/ports';
 import { UserController } from '@user/presentation/controllers';
 import * as request from 'supertest';
 
 describe(UserController.name, () => {
   let app: INestApplication;
 
-  const mockUserService = {
+  const mockServices = {
     execute: jest.fn(),
   };
 
@@ -22,7 +26,9 @@ describe(UserController.name, () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
       providers: [
-        { provide: CreateUserServicePort, useValue: mockUserService },
+        { provide: CreateUserServicePort, useValue: mockServices },
+        { provide: UpdateUserServicePort, useValue: mockServices },
+        { provide: DeleteUserServicePort, useValue: mockServices },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -66,7 +72,7 @@ describe(UserController.name, () => {
     };
 
     it('should register a user successfully', async () => {
-      mockUserService.execute.mockResolvedValueOnce(responseDto);
+      mockServices.execute.mockResolvedValueOnce(responseDto);
 
       await request(app.getHttpServer())
         .post('/users')
@@ -75,12 +81,12 @@ describe(UserController.name, () => {
         .expect(201)
         .expect((res) => {
           expect(res.body).toEqual(responseDto);
-          expect(mockUserService.execute).toHaveBeenCalled();
+          expect(mockServices.execute).toHaveBeenCalled();
         });
     });
 
     it('should return 409 if email is already in use', async () => {
-      mockUserService.execute.mockRejectedValueOnce(
+      mockServices.execute.mockRejectedValueOnce(
         new ConflictException('Email already in use'),
       );
 
@@ -99,7 +105,7 @@ describe(UserController.name, () => {
     });
 
     it('should return 401 if user is unauthorized', async () => {
-      mockUserService.execute.mockRejectedValueOnce(
+      mockServices.execute.mockRejectedValueOnce(
         new UnauthorizedException(
           'You do not have permission to perform this action',
         ),
