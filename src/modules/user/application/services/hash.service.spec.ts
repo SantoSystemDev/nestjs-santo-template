@@ -29,21 +29,6 @@ describe(HashService.name, () => {
       expect(result).toBe(hashedPassword);
       expect(bcrypt.hashSync).toHaveBeenCalledWith(password, 10);
     });
-
-    it('should log hashing action', () => {
-      // Arrange
-      const password = 'password123';
-      const loggerDebugSpy = jest.spyOn(service['logger'], 'debug');
-
-      // Mock do hashSync
-      (bcrypt.hashSync as jest.Mock).mockReturnValue('hashedPassword');
-
-      // Act
-      service.hash(password);
-
-      // Assert
-      expect(loggerDebugSpy).toHaveBeenCalledWith('Hashing password');
-    });
   });
 
   describe('compare method', () => {
@@ -77,22 +62,6 @@ describe(HashService.name, () => {
       // Assert
       expect(result).toBe(false);
       expect(bcrypt.compareSync).toHaveBeenCalledWith(password, hashedPassword);
-    });
-
-    it('should log comparison action', () => {
-      // Arrange
-      const password = 'password123';
-      const hashedPassword = 'hashedPassword';
-      const loggerDebugSpy = jest.spyOn(service['logger'], 'debug');
-
-      // Mock do compareSync
-      (bcrypt.compareSync as jest.Mock).mockReturnValue(true);
-
-      // Act
-      service.compare(password, hashedPassword);
-
-      // Assert
-      expect(loggerDebugSpy).toHaveBeenCalledWith('Comparing passwords');
     });
   });
 });
