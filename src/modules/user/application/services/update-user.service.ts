@@ -22,7 +22,7 @@ export class UpdateUserService implements UpdateUserServicePort {
   async execute(
     id: string,
     updateUserDto: UpdateUserDto,
-    loggedUserId: string,
+    // loggedUserId: string,
   ): Promise<UserResponseDto> {
     this.logger.log(`Updating user - userId: ${id}`);
 
