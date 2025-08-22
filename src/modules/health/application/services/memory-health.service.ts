@@ -6,14 +6,15 @@ export class MemoryHealthService {
   constructor(private readonly memoryHealthIndicator: MemoryHealthIndicator) {}
 
   async check() {
-    // Define the heap and RSS usage thresholds in bytes
+    // Define os limites de uso de heap e RSS em bytes
     const MAX_HEAP_USAGE = 150 * 1024 * 1024; // 150 MB
     const MAX_RSS_USAGE = 150 * 1024 * 1024; // 150 MB
 
-    // Perform health check for both heap and RSS
-    return await Promise.all([
+    // Os métodos checkHeap e checkRSS agora retornam objetos diretamente
+    const [heap, rss] = await Promise.all([
       this.memoryHealthIndicator.checkHeap('memory_heap', MAX_HEAP_USAGE),
       this.memoryHealthIndicator.checkRSS('memory_rss', MAX_RSS_USAGE),
     ]);
+    return { ...heap, ...rss };
   }
 }
