@@ -1,6 +1,12 @@
 import { Config } from 'jest';
 import { pathsToModuleNameMapper } from 'ts-jest';
-import { compilerOptions } from './tsconfig.json';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Carrega o tsconfig.json de forma compatível com as versões mais novas do Jest
+const tsconfig = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, './tsconfig.json'), 'utf8'),
+);
 
 const config: Config = {
   moduleFileExtensions: ['js', 'json', 'ts'],
@@ -23,7 +29,7 @@ const config: Config = {
     'index.ts',
     '.providers.ts',
   ],
-  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
+  moduleNameMapper: pathsToModuleNameMapper(tsconfig.compilerOptions.paths, {
     prefix: '<rootDir>',
   }),
   setupFiles: ['<rootDir>/jest.setup.ts'],
