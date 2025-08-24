@@ -1,5 +1,9 @@
 import { JwtAuthGuard } from '@auth/infrastructure/adapters/credentials';
-import { ApiUserPost } from '@modules/user/presentation/controllers/user.swagger';
+import {
+  UserApiResponseDelete,
+  UserApiResponsePost,
+  UserApiResponsePut,
+} from './user.swagger';
 import {
   Body,
   Controller,
@@ -11,90 +15,69 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthenticatedUser } from '@shared/decorators';
 import {
   CreateUserDto,
   UpdateUserDto,
   UserResponseDto,
-} from '@user/application/dtos';
+} from '@modules/user/presentation/dtos';
+import { CreateUserCommand, UpdateUserCommand } from '@user/domain/commands';
 import {
-  CreateUserServicePort,
-  DeleteUserServicePort,
-  UpdateUserServicePort,
-} from '@user/domain/ports';
+  CreateUserService,
+  DeleteUserService,
+  UpdateUserService,
+} from '@user/application/services';
+import { UserResponseMapper } from '@user/presentation/mappers';
 
 @ApiBearerAuth()
 @Controller('/users')
 export class UserController {
   constructor(
-    private readonly createUserService: CreateUserServicePort,
-    private readonly updateUserService: UpdateUserServicePort,
-    private readonly deleteUserService: DeleteUserServicePort,
+    private readonly createUserService: CreateUserService,
+    private readonly updateUserService: UpdateUserService,
+    private readonly deleteUserService: DeleteUserService,
   ) {}
 
   @Post()
-  @ApiUserPost()
+  @UserApiResponsePost()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Body() createUserDto: CreateUserDto,
+    @Body() request: CreateUserDto,
     @AuthenticatedUser('userId') adminId: string,
   ): Promise<UserResponseDto> {
-    return await this.createUserService.execute(createUserDto, adminId);
+    // Converter DTO para Command (responsabilidade da camada de apresentação)
+    const command = new CreateUserCommand({ ...request, adminId });
+
+    // Executar comando e obter modelo de domínio
+    const user = await this.createUserService.execute(command);
+
+    // Converter modelo de domínio para DTO de resposta
+    return UserResponseMapper.fromDomain(user);
   }
 
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'User updated successfully',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'User not found',
-    content: {
-      'application/json': {
-        example: {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'User not found',
-          error: 'Not Found',
-        },
-      },
-    },
-  })
   @Put(':id')
+  @UserApiResponsePut()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() request: UpdateUserDto,
     @AuthenticatedUser('userId') loggedUserId: string,
   ): Promise<UserResponseDto> {
-    return await this.updateUserService.execute(
-      id,
-      updateUserDto,
-      loggedUserId,
-    );
+    // Converter DTO para Command (responsabilidade da camada de apresentação)
+    const command = new UpdateUserCommand({ ...request, id, loggedUserId });
+
+    // Executar comando e obter modelo de domínio
+    const user = await this.updateUserService.execute(command);
+
+    // Executar comando e obter DTO de resposta (temporário - service deveria retornar UserModel)
+    return UserResponseMapper.fromDomain(user);
   }
 
-  @ApiResponse({
-    status: HttpStatus.NO_CONTENT,
-    description: 'User deleted successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'User not found',
-    content: {
-      'application/json': {
-        example: {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'User not found',
-          error: 'Not Found',
-        },
-      },
-    },
-  })
   @Delete(':id')
+  @UserApiResponseDelete()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(

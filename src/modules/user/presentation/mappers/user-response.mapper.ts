@@ -1,4 +1,4 @@
-import { UserModel } from '@user/domain/models';
+import { RoleModel, UserModel } from '@user/domain/models';
 import { UserResponseDto, RoleResponseDto } from '@user/presentation/dtos';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 
@@ -14,11 +14,11 @@ export class UserResponseMapper {
     });
   }
 
-  private static fromDomainRoles(roles: UserModel['roles']): RoleResponseDto[] {
+  private static fromDomainRoles(roles: RoleModel[]): RoleResponseDto[] {
     return roles.map(this.fromDomainRole);
   }
 
-  private static fromDomainRole(role: UserModel['roles'][0]): RoleResponseDto {
+  private static fromDomainRole(role: RoleModel): RoleResponseDto {
     return new RoleResponseDto({
       ...role,
       name: role.name as RoleEnum,
