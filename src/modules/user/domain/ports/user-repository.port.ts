@@ -41,11 +41,11 @@ export abstract class UserRepositoryPort {
    * Find a user by email that does not have the given ID.
    *
    * @param email - User's email
-   * @param userId - User ID to exclude from search
+   * @param excludeUserId - User ID to exclude from search
    * @returns The user or null if not found
    */
   abstract findByEmailAndNotId(
     email: string,
-    userId: string,
+    excludeUserId: string,
   ): Promise<UserModel | null>;
 }

@@ -1,112 +1,100 @@
 import { UserWithRoles } from '@modules/user/infrastructure/adapters/repositories/interfaces';
 import { Injectable } from '@nestjs/common';
+import { BaseRepository } from '@shared/database/base.repository';
 import { PrismaService } from '@shared/database';
-import { CreateUserDto, UpdateUserDto } from '@user/application/dtos';
 import { RoleModel, UserModel } from '@user/domain/models';
 import { UserRepositoryPort } from '@user/domain/ports';
 
 @Injectable()
-export class UserRepository implements UserRepositoryPort {
-  constructor(private readonly prisma: PrismaService) {}
+export class UserRepository
+  extends BaseRepository
+  implements UserRepositoryPort
+{
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
 
   async findByEmail(email: string): Promise<UserModel | null> {
-    try {
-      return this.mapToDomain(
-        await this.prisma.user.findUnique({
-          where: { email },
-          include: { roles: true },
-        }),
-      );
-    } catch (error) {
-      throw this.prisma.handleDatabaseError(error);
-    }
+    return this.executeQuery(async () => {
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        include: { roles: true },
+      });
+      return this.mapToDomain(user);
+    });
   }
 
   async findById(userId: string): Promise<UserModel | null> {
-    try {
-      return this.mapToDomain(
-        await this.prisma.user.findUnique({
-          where: { id: userId },
-          include: { roles: true },
-        }),
-      );
-    } catch (error) {
-      throw this.prisma.handleDatabaseError(error);
-    }
+    return this.executeQuery(async () => {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { roles: true },
+      });
+      return this.mapToDomain(user);
+    });
   }
 
-  async createUser(
-    createUserDto: CreateUserDto,
-    hashedPassword: string,
-  ): Promise<UserModel> {
-    try {
-      return this.mapToDomain(
-        await this.prisma.user.create({
-          data: {
-            email: createUserDto.email.trim().toLowerCase(),
-            password: hashedPassword,
-            fullName: createUserDto.fullName.trim().toUpperCase(),
-            phoneNumber: createUserDto.phoneNumber ?? null,
-            isActive: true,
-            roles: {
-              connect: createUserDto.roles.map((role) => ({
-                name: role.toString(),
-              })),
-            },
+  async createUser(user: UserModel): Promise<UserModel> {
+    return this.executeQuery(async () => {
+      const createdUser = await this.prisma.user.create({
+        data: {
+          email: user.email,
+          password: user.password, // Assume que já está hasheado
+          fullName: user.fullName,
+          phoneNumber: user.phoneNumber,
+          isActive: true,
+          roles: {
+            connect:
+              user.roles?.map((role) => ({
+                name: role.name,
+              })) || [],
           },
-          include: { roles: true },
-        }),
-      );
-    } catch (error) {
-      throw this.prisma.handleDatabaseError(error);
-    }
+        },
+        include: { roles: true },
+      });
+      return this.mapToDomain(createdUser)!;
+    });
   }
 
-  async update(user: UpdateUserDto & { id: string }): Promise<UserModel> {
-    try {
-      return this.mapToDomain(
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: {
-            email: user.email.trim().toLowerCase(),
-            fullName: user.fullName.trim().toUpperCase(),
-            phoneNumber: user.phoneNumber ?? null,
-            isActive: user.isActive,
-          },
-          include: { roles: true },
-        }),
-      );
-    } catch (error) {
-      throw this.prisma.handleDatabaseError(error);
-    }
+  async update(user: UserModel): Promise<UserModel> {
+    return this.executeQuery(async () => {
+      const updatedUser = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: user.email,
+          fullName: user.fullName,
+          phoneNumber: user.phoneNumber,
+          isActive: user.isActive,
+          // Note: Roles are not updated here. Role management should be handled separately.
+        },
+        include: { roles: true },
+      });
+      return this.mapToDomain(updatedUser)!;
+    });
   }
 
   async delete(userId: string): Promise<void> {
-    try {
+    return this.executeQuery(async () => {
       await this.prisma.user.delete({
         where: { id: userId },
       });
-    } catch (error) {
-      throw this.prisma.handleDatabaseError(error);
-    }
+    });
   }
 
   async findByEmailAndNotId(
     email: string,
     excludeUserId: string,
   ): Promise<UserModel | null> {
-    try {
-      return this.mapToDomain(
-        await this.prisma.user.findFirst({
-          where: {
-            email,
-            id: { not: excludeUserId },
-          },
-        }),
-      );
-    } catch (error) {
-      throw this.prisma.handleDatabaseError(error);
-    }
+    return this.executeQuery(async () => {
+      const user = await this.prisma.user.findFirst({
+        where: {
+          email,
+          id: { not: excludeUserId },
+        },
+        include: { roles: true },
+      });
+      return this.mapToDomain(user);
+    });
   }
 
   /**
