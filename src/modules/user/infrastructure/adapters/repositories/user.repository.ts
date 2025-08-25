@@ -1,9 +1,9 @@
-import { UserWithRoles } from '@modules/user/infrastructure/adapters/repositories/interfaces';
 import { Injectable } from '@nestjs/common';
-import { BaseRepository } from '@shared/database/base.repository';
 import { PrismaService } from '@shared/database';
+import { BaseRepository } from '@shared/database/base.repository';
 import { RoleModel, UserModel } from '@user/domain/models';
 import { UserRepositoryPort } from '@user/domain/ports';
+import { UserWithRoles } from '@user/infrastructure/adapters/repositories/interfaces';
 
 @Injectable()
 export class UserRepository

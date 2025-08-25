@@ -1,10 +1,5 @@
 import { JwtAuthGuard } from '@auth/infrastructure/adapters/credentials';
 import {
-  UserApiResponseDelete,
-  UserApiResponsePost,
-  UserApiResponsePut,
-} from './user.swagger';
-import {
   Body,
   Controller,
   Delete,
@@ -18,17 +13,25 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthenticatedUser } from '@shared/decorators';
 import {
-  CreateUserDto,
-  UpdateUserDto,
-  UserResponseDto,
-} from '@modules/user/presentation/dtos';
-import { CreateUserCommand, UpdateUserCommand } from '@user/domain/commands';
+  CreateUserCommand,
+  UpdateUserCommand,
+} from '@user/application/commands';
 import {
   CreateUserService,
   DeleteUserService,
   UpdateUserService,
 } from '@user/application/services';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserResponseDto,
+} from '@user/presentation/dtos';
 import { UserResponseMapper } from '@user/presentation/mappers';
+import {
+  UserApiResponseDelete,
+  UserApiResponsePost,
+  UserApiResponsePut,
+} from './user.swagger';
 
 @ApiBearerAuth()
 @Controller('/users')

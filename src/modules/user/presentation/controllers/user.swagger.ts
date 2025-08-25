@@ -1,6 +1,6 @@
-import { UserResponseDto } from '@modules/user/presentation/dtos';
 import { HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { UserResponseDto } from '@user/presentation/dtos';
 
 export function UserApiResponsePost(): MethodDecorator {
   return function (target: any, propertyKey: any, descriptor: any): void {

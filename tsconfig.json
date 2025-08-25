@@ -20,9 +20,6 @@
     "resolveJsonModule": true,
     "importsNotUsedAsValues": "remove",
     "paths": {
-      "@modules/*": [
-        "src/modules/*"
-      ],
       "@auth/*": [
         "src/modules/auth/*"
       ],
@@ -34,7 +31,10 @@
       ],
       "@shared/*": [
         "src/shared/*"
-      ]
+      ],
+      "@modules/*": [
+        "src/modules/*"
+      ],
     }
   },
   "exclude": [

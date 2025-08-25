@@ -1,4 +1,4 @@
-import { UserModel } from '@modules/user/domain/models';
+import { UserModel } from '@user/domain/models';
 
 export abstract class UserRepositoryPort {
   /**
