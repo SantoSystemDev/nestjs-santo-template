@@ -5,14 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateUserDto, UserResponseDto } from '@user/application/dtos';
-import { RoleEnum } from '@user/domain/enums/role.enum';
 import {
-  CreateUserServicePort,
-  DeleteUserServicePort,
-  UpdateUserServicePort,
-} from '@user/domain/ports';
+  CreateUserService,
+  DeleteUserService,
+  UpdateUserService,
+} from '@user/application/services';
+import { RoleEnum } from '@user/domain/enums/role.enum';
 import { UserController } from '@user/presentation/controllers';
+import { CreateUserDto, UserResponseDto } from '@user/presentation/dtos';
 import * as request from 'supertest';
 
 describe(UserController.name, () => {
@@ -26,9 +26,9 @@ describe(UserController.name, () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
       providers: [
-        { provide: CreateUserServicePort, useValue: mockServices },
-        { provide: UpdateUserServicePort, useValue: mockServices },
-        { provide: DeleteUserServicePort, useValue: mockServices },
+        { provide: CreateUserService, useValue: mockServices },
+        { provide: UpdateUserService, useValue: mockServices },
+        { provide: DeleteUserService, useValue: mockServices },
       ],
     })
       .overrideGuard(JwtAuthGuard)

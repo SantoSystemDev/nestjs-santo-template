@@ -1,6 +1,6 @@
 import { SignupDto } from '@auth/application/dtos';
 import { AuthService } from '@auth/application/services/auth.service';
-import { JwtPayloadModel } from '@modules/auth/domain/models';
+import { JwtPayloadModel } from '@auth/domain/models';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';

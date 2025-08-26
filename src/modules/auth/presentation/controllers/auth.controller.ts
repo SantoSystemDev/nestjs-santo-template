@@ -1,9 +1,9 @@
 import { SignupDto } from '@auth/application/dtos';
+import { AuthService } from '@auth/application/services';
 import { JwtPayloadModel } from '@auth/domain/models';
-import { AuthServicePort } from '@auth/domain/ports';
 import {
   JwtAuthGuard,
-  LocalAuthGuard,
+  PasswordAuthGuard,
 } from '@auth/infrastructure/adapters/credentials';
 import {
   Body,
@@ -17,7 +17,7 @@ import { AuthenticatedUser } from '@shared/decorators';
 
 @Controller('/auth')
 export class AuthController {
-  constructor(private readonly service: AuthServicePort) {}
+  constructor(private readonly service: AuthService) {}
 
   @Post('/signup')
   @HttpCode(HttpStatus.CREATED)
@@ -26,7 +26,7 @@ export class AuthController {
   }
 
   @Post('/login')
-  @UseGuards(LocalAuthGuard)
+  @UseGuards(PasswordAuthGuard)
   @HttpCode(HttpStatus.OK)
   async login(@AuthenticatedUser() user: JwtPayloadModel) {
     return await this.service.login(user);

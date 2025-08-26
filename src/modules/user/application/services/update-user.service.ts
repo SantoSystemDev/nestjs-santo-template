@@ -1,89 +1,69 @@
-import { RoleEnum } from '@modules/user/domain/enums/role.enum';
-import { RoleModel, UserModel } from '@modules/user/domain/models';
 import {
   ConflictException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  RoleResponseDto,
-  UpdateUserDto,
-  UserResponseDto,
-} from '@user/application/dtos';
-import { UpdateUserServicePort, UserRepositoryPort } from '@user/domain/ports';
+import { UpdateUserCommand } from '@user/application/commands';
+import { normalizeUserData } from '@user/application/utils';
+import { UserModel } from '@user/domain/models';
+import { UserRepositoryPort } from '@user/domain/ports';
 
 @Injectable()
-export class UpdateUserService implements UpdateUserServicePort {
+export class UpdateUserService {
   private readonly logger = new Logger(UpdateUserService.name);
 
   constructor(private readonly repository: UserRepositoryPort) {}
 
-  async execute(
-    id: string,
-    updateUserDto: UpdateUserDto,
-    // loggedUserId: string,
-  ): Promise<UserResponseDto> {
-    this.logger.log(`Updating user - userId: ${id}`);
+  async execute(command: UpdateUserCommand): Promise<UserModel> {
+    this.logger.log(`Updating user ${command.id}`);
 
-    const user = await this.verifyUserExists(id);
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      await this.verifyEmailIsAvailable(updateUserDto.email, user.id);
-    }
+    const currentUser = await this.getCurrentUser(command.id);
+    await this.validateEmailChange(command.email, currentUser);
 
-    const updatedUser = await this.repository.update({
-      id,
-      email: updateUserDto.email ?? user.email,
-      fullName: updateUserDto.fullName ?? user.fullName,
-      phoneNumber: updateUserDto.phoneNumber ?? user.phoneNumber,
-      isActive: updateUserDto.isActive ?? user.isActive,
-    });
+    const updatedData = this.buildUpdateData(command, currentUser);
+    const updatedUser = await this.repository.update(updatedData);
 
-    // const updatedUser = await this.repository.update({ ...updateUserDto, id });
-    this.logger.log(`User updated successfully - userId: ${updatedUser.id}`);
-
-    return new UserResponseDto({
-      ...updatedUser,
-      roles: this.mapRolesToResponse(updatedUser.roles),
-    });
+    this.logger.log(`User ${updatedUser.id} updated successfully`);
+    return updatedUser;
   }
 
-  private mapRolesToResponse(roles: RoleModel[]): RoleResponseDto[] {
-    return roles.map(
-      (role) =>
-        new RoleResponseDto({
-          id: role.id,
-          name: role.name as RoleEnum,
-          description: role.description,
-        }),
-    );
-  }
-
-  private async verifyUserExists(userId: string): Promise<UserModel> {
-    this.logger.log(`Checking if user exists - userId: ${userId}`);
-
-    const existingUser = await this.repository.findById(userId);
-    if (!existingUser) {
-      this.logger.error('Attempt to update non-existent user');
+  private async getCurrentUser(userId: string): Promise<UserModel> {
+    const user = await this.repository.findById(userId);
+    if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    this.logger.log(`User validation successful - userId: ${userId}`);
-    return existingUser;
+    return user;
   }
 
-  private async verifyEmailIsAvailable(
-    email: string,
-    id: string,
+  private async validateEmailChange(
+    newEmail: string | undefined,
+    currentUser: UserModel,
   ): Promise<void> {
-    this.logger.log('Checking if the email is already registered');
+    if (!newEmail || newEmail === currentUser.email) return;
 
-    const existingUser = await this.repository.findByEmailAndNotId(email, id);
-    if (existingUser) {
-      this.logger.error('Update attempt failed - email already in use');
+    const emailInUse = await this.repository.findByEmailAndNotId(
+      newEmail,
+      currentUser.id,
+    );
+
+    if (emailInUse) {
       throw new ConflictException('Email already in use');
     }
+  }
 
-    this.logger.log('Email is available for registration');
+  private buildUpdateData(
+    command: UpdateUserCommand,
+    currentUser: UserModel,
+  ): UserModel {
+    return new UserModel({
+      ...currentUser,
+      ...normalizeUserData({
+        email: command.email,
+        fullName: command.fullName,
+        phoneNumber: command.phoneNumber,
+      }),
+      isActive: command.isActive ?? currentUser.isActive,
+    });
   }
 }

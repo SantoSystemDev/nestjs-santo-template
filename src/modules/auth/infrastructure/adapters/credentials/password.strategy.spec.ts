@@ -2,10 +2,10 @@ import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserModel } from '@user/domain/models';
 import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
-import { LocalStrategy } from './local.strategy';
+import { PasswordStrategy } from './password.strategy';
 
-describe(LocalStrategy.name, () => {
-  let strategy: LocalStrategy;
+describe(PasswordStrategy.name, () => {
+  let strategy: PasswordStrategy;
   let userRepository: jest.Mocked<UserRepositoryPort>;
   let hashService: jest.Mocked<HashServicePort>;
 
@@ -23,13 +23,13 @@ describe(LocalStrategy.name, () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        LocalStrategy,
+        PasswordStrategy,
         { provide: UserRepositoryPort, useValue: userRepository },
         { provide: HashServicePort, useValue: hashService },
       ],
     }).compile();
 
-    strategy = module.get<LocalStrategy>(LocalStrategy);
+    strategy = module.get<PasswordStrategy>(PasswordStrategy);
   });
 
   afterEach(() => {

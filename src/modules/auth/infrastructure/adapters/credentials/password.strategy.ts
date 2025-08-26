@@ -6,8 +6,8 @@ import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
 import { Strategy } from 'passport-local';
 
 @Injectable()
-export class LocalStrategy extends PassportStrategy(Strategy) {
-  private readonly logger = new Logger(LocalStrategy.name);
+export class PasswordStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(PasswordStrategy.name);
 
   constructor(
     private readonly userRepository: UserRepositoryPort,

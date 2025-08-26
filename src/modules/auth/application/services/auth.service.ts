@@ -1,6 +1,5 @@
 import { SignupDto } from '@auth/application/dtos';
 import { JwtPayloadModel } from '@auth/domain/models';
-import { AuthServicePort } from '@auth/domain/ports';
 import {
   ConflictException,
   Injectable,
@@ -8,12 +7,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { CreateUserDto } from '@user/application/dtos';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
+import { CreateUserDto } from '@user/presentation/dtos';
 
 @Injectable()
-export class AuthService implements AuthServicePort {
+export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(

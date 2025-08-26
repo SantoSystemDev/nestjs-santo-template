@@ -1,23 +1,23 @@
 import { SignupDto } from '@auth/application/dtos';
+import { AuthService } from '@auth/application/services';
 import { JwtPayloadModel } from '@auth/domain/models';
-import { AuthServicePort } from '@auth/domain/ports';
 import {
   JwtAuthGuard,
-  LocalAuthGuard,
+  PasswordAuthGuard,
 } from '@auth/infrastructure/adapters/credentials';
-import { RoleEnum } from '@modules/user/domain/enums/role.enum';
 import {
   ExecutionContext,
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { RoleEnum } from '@user/domain/enums/role.enum';
 import * as request from 'supertest';
 import { AuthController } from './auth.controller';
 
 describe(AuthController.name, () => {
   let app: INestApplication;
-  let service: AuthServicePort;
+  let service: AuthService;
 
   const userJwtPayload: JwtPayloadModel = {
     userId: 'user-123',
@@ -35,12 +35,12 @@ describe(AuthController.name, () => {
       controllers: [AuthController],
       providers: [
         {
-          provide: AuthServicePort,
+          provide: AuthService,
           useValue: mockAuthService,
         },
       ],
     })
-      .overrideGuard(LocalAuthGuard)
+      .overrideGuard(PasswordAuthGuard)
       .useValue({
         canActivate: jest.fn((context: ExecutionContext) => {
           const request = context.switchToHttp().getRequest();
@@ -68,7 +68,7 @@ describe(AuthController.name, () => {
     );
 
     await app.init();
-    service = module.get<AuthServicePort>(AuthServicePort);
+    service = module.get<AuthService>(AuthService);
   });
 
   afterAll(async () => {

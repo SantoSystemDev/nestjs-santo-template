@@ -1,17 +1,14 @@
-import { RoleEnum } from '@modules/user/domain/enums/role.enum';
-import {
-  DeleteUserServicePort,
-  UserRepositoryPort,
-} from '@modules/user/domain/ports';
 import {
   Injectable,
   Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { RoleEnum } from '@user/domain/enums/role.enum';
+import { UserRepositoryPort } from '@user/domain/ports';
 
 @Injectable()
-export class DeleteUserService implements DeleteUserServicePort {
+export class DeleteUserService {
   private readonly logger = new Logger(DeleteUserService.name);
 
   constructor(private readonly repository: UserRepositoryPort) {}

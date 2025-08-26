@@ -1,24 +1,25 @@
 import {
-  CreateUserDto,
-  RoleResponseDto,
-  UserResponseDto,
-} from '@modules/user/application/dtos';
-import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { RoleEnum } from '@user/domain/enums/role.enum';
-import { RoleModel } from '@user/domain/models';
+import { DomainError } from '@shared/errors';
+import { CreateUserCommand } from '@user/application/commands';
+import { UserModel } from '@user/domain/models';
+import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
 import {
-  CreateUserServicePort,
-  HashServicePort,
-  UserRepositoryPort,
-} from '@user/domain/ports';
+  AdminNotFoundError,
+  EmailAlreadyInUseError,
+  InsufficientPermissionsError,
+  UserNotFoundError,
+} from '../../domain/errors';
 
 @Injectable()
-export class CreateUserService implements CreateUserServicePort {
+export class CreateUserService {
   private readonly logger = new Logger(CreateUserService.name);
 
   constructor(
@@ -26,42 +27,45 @@ export class CreateUserService implements CreateUserServicePort {
     private readonly hashService: HashServicePort,
   ) {}
 
-  async execute(
-    createUserDto: CreateUserDto,
-    adminId: string,
-  ): Promise<UserResponseDto> {
-    this.logger.log(`Creating new user - Requested by adminId: ${adminId}`);
+  async execute(command: CreateUserCommand): Promise<UserModel> {
+    this.logger.log(
+      `Creating new user - Requested by adminId: ${command.adminId}`,
+    );
 
-    const { email, password } = createUserDto;
-    await this.verifyAdminPermissionsAndEmailIsAvailable(adminId, email);
+    try {
+      return await this.createUserInternal(command);
+    } catch (error) {
+      return this.handleCreateUserError(error);
+    }
+  }
 
-    const hashedPassword = this.hashService.hash(password);
+  private async createUserInternal(
+    command: CreateUserCommand,
+  ): Promise<UserModel> {
+    // Verificar permissões e disponibilidade do email
+    await this.validateBusinessRules(command.adminId, command.email);
+
+    // Hash da senha
+    const hashedPassword = this.hashService.hash(command.password);
     this.logger.log('Password hashed successfully');
 
-    const newUser = await this.repository.createUser(
-      createUserDto,
-      hashedPassword,
-    );
-    this.logger.log(`User created successfully - userId: ${newUser.id}`);
-
-    return new UserResponseDto({
-      ...newUser,
-      roles: this.mapRolesToResponse(newUser.roles),
+    // Criar usuário usando factory method com validações
+    const newUser = UserModel.create({
+      email: command.email,
+      password: hashedPassword,
+      fullName: command.fullName,
+      roles: command.roles,
+      phoneNumber: command.phoneNumber,
     });
+
+    // Persistir no repositório
+    const savedUser = await this.repository.createUser(newUser);
+    this.logger.log(`User created successfully - userId: ${savedUser.id}`);
+
+    return savedUser;
   }
 
-  private mapRolesToResponse(roles: RoleModel[]): RoleResponseDto[] {
-    return roles.map(
-      (role) =>
-        new RoleResponseDto({
-          id: role.id,
-          name: role.name as RoleEnum,
-          description: role.description,
-        }),
-    );
-  }
-
-  private async verifyAdminPermissionsAndEmailIsAvailable(
+  private async validateBusinessRules(
     adminId: string,
     email: string,
   ): Promise<void> {
@@ -72,18 +76,48 @@ export class CreateUserService implements CreateUserServicePort {
       this.repository.findByEmail(email),
     ]);
 
-    if (!adminUser?.hasRole(RoleEnum.ADMIN)) {
+    // Usar métodos estáticos do modelo de domínio para validações
+    UserModel.validateAdminPermissions(adminUser);
+    UserModel.validateEmailAvailability(existingUser, email);
+  }
+
+  private handleCreateUserError(error: any): never {
+    if (error instanceof DomainError) {
       this.logger.error(
-        `Unauthorized user creation attempt - userId: ${adminId}`,
+        `User creation failed with domain error: ${error.message}`,
       );
-      throw new UnauthorizedException(
-        'You do not have permission to perform this action',
-      );
+      throw this.convertDomainError(error);
     }
 
-    if (existingUser) {
-      this.logger.error('Attempt to create duplicate user');
-      throw new ConflictException('Email already in use');
+    if (error instanceof Error) {
+      this.logger.error(`User creation failed: ${error.message}`);
     }
+
+    throw error;
+  }
+
+  private convertDomainError(error: DomainError): Error {
+    // Erros de autorização/permissão
+    if (error instanceof InsufficientPermissionsError) {
+      return new ForbiddenException(error.message);
+    }
+
+    // Erros de usuário não encontrado (contexto de admin não encontrado)
+    if (error instanceof AdminNotFoundError) {
+      return new UnauthorizedException(error.message);
+    }
+
+    // Erros de usuário não encontrado
+    if (error instanceof UserNotFoundError) {
+      return new NotFoundException(error.message);
+    }
+
+    // Erros de conflito
+    if (error instanceof EmailAlreadyInUseError) {
+      return new ConflictException(error.message);
+    }
+
+    // Fallback para erros não categorizados
+    return new BadRequestException(error.message);
   }
 }

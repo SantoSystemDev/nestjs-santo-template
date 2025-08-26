@@ -1,21 +1,13 @@
-import {
-  CreateUserDto,
-  RoleResponseDto,
-  UserResponseDto,
-} from '@modules/user/application/dtos';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CreateUserCommand } from '@user/application/commands';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { RoleModel, UserModel } from '@user/domain/models';
-import {
-  CreateUserServicePort,
-  HashServicePort,
-  UserRepositoryPort,
-} from '@user/domain/ports';
+import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
 import { CreateUserService } from './create-user.service';
 
 describe(CreateUserService.name, () => {
-  let service: CreateUserServicePort;
+  let service: CreateUserService;
   let repository: jest.Mocked<UserRepositoryPort>;
   let hashService: jest.Mocked<HashServicePort>;
 
@@ -59,7 +51,7 @@ describe(CreateUserService.name, () => {
 
   describe('execute', () => {
     it('should create a new user successfully', async () => {
-      const createUserDto: CreateUserDto = {
+      const createUserDto: CreateUserCommand = {
         email: 'newuser@example.com',
         password: 'password123',
         fullName: 'New User',
@@ -87,19 +79,28 @@ describe(CreateUserService.name, () => {
         }),
       );
 
-      const result = await service.execute(createUserDto, adminId);
+      const result = await service.execute(
+        new CreateUserCommand({
+          email: createUserDto.email,
+          password: createUserDto.password,
+          fullName: createUserDto.fullName,
+          phoneNumber: createUserDto.phoneNumber,
+          roles: createUserDto.roles,
+        }),
+        adminId,
+      );
 
       expect(repository.findById).toHaveBeenCalledWith(adminId);
       expect(repository.findByEmail).toHaveBeenCalledWith(createUserDto.email);
       expect(hashService.hash).toHaveBeenCalledWith(createUserDto.password);
       expect(repository.createUser).toHaveBeenCalledWith(
-        createUserDto,
+        expect.any(CreateUserCommand),
         'hashed-password',
       );
 
-      expect(result).toBeInstanceOf(UserResponseDto);
+      expect(result).toBeInstanceOf(UserModel);
       expect(result.roles).toEqual([
-        new RoleResponseDto({ id: 'role-2', name: RoleEnum.USER }),
+        new RoleModel({ id: 'role-2', name: RoleEnum.USER }),
       ]);
     });
 
@@ -123,7 +124,7 @@ describe(CreateUserService.name, () => {
 
       await expect(
         service.execute(
-          new CreateUserDto({
+          new CreateUserCommand({
             email: 'existing@example.com',
             password: '123',
             fullName: 'Test',
@@ -147,7 +148,7 @@ describe(CreateUserService.name, () => {
 
       await expect(
         service.execute(
-          new CreateUserDto({
+          new CreateUserCommand({
             email: 'new@example.com',
             password: '123',
             fullName: 'Test',
@@ -163,10 +164,10 @@ describe(CreateUserService.name, () => {
 
       await expect(
         service.execute(
-          new CreateUserDto({
-            email: 'new@example.com',
-            password: '123',
-            fullName: 'Test',
+          new CreateUserCommand({
+            email: 'john@example.com',
+            password: 'password123',
+            fullName: 'John Doe',
             roles: [RoleEnum.USER],
           }),
           'user-123',
@@ -175,7 +176,7 @@ describe(CreateUserService.name, () => {
     });
 
     it('should throw an error if hash fails', async () => {
-      const createUserDto = new CreateUserDto({
+      const createUserDto = new CreateUserCommand({
         email: 'newuser@example.com',
         password: 'Password123!',
         fullName: 'New User',
@@ -202,7 +203,7 @@ describe(CreateUserService.name, () => {
     });
 
     it('should throw an error if creating user in the database fails', async () => {
-      const createUserDto = new CreateUserDto({
+      const createUserDto = new CreateUserCommand({
         email: 'newuser@example.com',
         password: 'Password123!',
         fullName: 'New User',
@@ -227,8 +228,8 @@ describe(CreateUserService.name, () => {
       );
     });
 
-    it('should throw an error if roles are empty', async () => {
-      const createUserDto = new CreateUserDto({
+    it('should throw UnauthorizedException if roles are empty', async () => {
+      const createUserDto = new CreateUserCommand({
         email: 'newuser@example.com',
         password: 'Password123!',
         fullName: 'New User',
@@ -240,8 +241,8 @@ describe(CreateUserService.name, () => {
       );
     });
 
-    it('should throw an error if roles are invalid', async () => {
-      const createUserDto = new CreateUserDto({
+    it('should throw UnauthorizedException if roles are invalid', async () => {
+      const createUserDto = new CreateUserCommand({
         email: 'newuser@example.com',
         password: 'Password123!',
         fullName: 'New User',
