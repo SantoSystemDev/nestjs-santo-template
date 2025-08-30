@@ -34,7 +34,7 @@
       ],
       "@modules/*": [
         "src/modules/*"
-      ],
+      ]
     }
   },
   "exclude": [
