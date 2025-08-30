@@ -11,8 +11,9 @@ import {
   UpdateUserService,
 } from '@user/application/services';
 import { RoleEnum } from '@user/domain/enums/role.enum';
+import { RoleModel, UserModel } from '@user/domain/models';
 import { UserController } from '@user/presentation/controllers';
-import { CreateUserDto, UserResponseDto } from '@user/presentation/dtos';
+import { CreateUserDto } from '@user/presentation/dtos';
 import * as request from 'supertest';
 
 describe(UserController.name, () => {
@@ -52,27 +53,30 @@ describe(UserController.name, () => {
       email: 'user@example.com',
       password: 'Password123!',
       fullName: 'John Doe',
+      phoneNumber: '11912345678',
       roles: [RoleEnum.USER],
     };
 
-    const responseDto: UserResponseDto = {
-      id: 'user-id',
-      email: 'user@example.com',
-      fullName: 'John Doe',
-      avatarUrl: 'http://example.com/avatar.png',
-      phoneNumber: '11912345678',
-      isActive: true,
-      roles: [
-        {
-          id: 'role-id',
-          name: RoleEnum.USER,
-          description: 'Basic user role',
-        },
-      ],
-    };
-
     it('should register a user successfully', async () => {
-      mockServices.execute.mockResolvedValueOnce(responseDto);
+      // Simular um usuário retornado do repositório (com ID gerado)
+      const createdUser = new UserModel({
+        id: 'user-id',
+        email: 'user@example.com',
+        fullName: 'John Doe',
+        phoneNumber: '11912345678',
+        password: 'hashed-password',
+        avatarUrl: 'http://example.com/avatar.png',
+        isActive: true,
+        roles: [
+          new RoleModel({
+            id: 'role-id',
+            name: RoleEnum.USER,
+            description: 'Basic user role',
+          }),
+        ],
+      });
+
+      mockServices.execute.mockResolvedValueOnce(createdUser);
 
       await request(app.getHttpServer())
         .post('/users')
@@ -80,7 +84,21 @@ describe(UserController.name, () => {
         .send(validDto)
         .expect(201)
         .expect((res) => {
-          expect(res.body).toEqual(responseDto);
+          expect(res.body).toEqual({
+            id: 'user-id',
+            email: 'user@example.com',
+            fullName: 'John Doe',
+            avatarUrl: 'http://example.com/avatar.png',
+            phoneNumber: '11912345678',
+            isActive: true,
+            roles: [
+              {
+                id: 'role-id',
+                name: RoleEnum.USER,
+                description: 'Basic user role',
+              },
+            ],
+          });
           expect(mockServices.execute).toHaveBeenCalled();
         });
     });

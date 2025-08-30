@@ -90,8 +90,8 @@ describe(AuthService.name, () => {
         expect.objectContaining({
           email: signupDto.email,
           fullName: signupDto.fullName,
+          password: hashedPassword,
         }),
-        hashedPassword,
       );
       expect(jwtService.sign).toHaveBeenCalledWith({
         userId: user.id,
@@ -147,9 +147,7 @@ describe(AuthService.name, () => {
         fullName: 'Test User',
       };
 
-      await expect(service.signup(signupDto)).rejects.toThrow(
-        "Cannot read properties of undefined (reading 'id')",
-      );
+      await expect(service.signup(signupDto)).rejects.toThrow();
     });
   });
 

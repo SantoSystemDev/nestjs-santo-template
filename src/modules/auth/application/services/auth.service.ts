@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { RoleEnum } from '@user/domain/enums/role.enum';
+import { UserModel } from '@user/domain/models';
 import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
-import { CreateUserDto } from '@user/presentation/dtos';
 
 @Injectable()
 export class AuthService {
@@ -29,16 +29,15 @@ export class AuthService {
     const hashedPassword = this.hashService.hash(signupDto.password);
     this.logger.log('Password hashed successfully');
 
-    const createUserDto: CreateUserDto = {
+    // Criar o modelo de usuário usando o factory method
+    const newUser = UserModel.create({
       email: signupDto.email,
-      password: signupDto.password,
+      password: hashedPassword,
       fullName: signupDto.fullName,
       roles: [RoleEnum.USER],
-    };
-    const user = await this.userRepository.createUser(
-      createUserDto,
-      hashedPassword,
-    );
+    });
+
+    const user = await this.userRepository.createUser(newUser);
     this.logger.log(`User signed up successfully - userId: ${user.id}`);
 
     const payload: JwtPayloadModel = {

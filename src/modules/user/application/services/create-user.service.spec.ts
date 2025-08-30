@@ -1,4 +1,8 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateUserCommand } from '@user/application/commands';
 import { RoleEnum } from '@user/domain/enums/role.enum';
@@ -51,12 +55,13 @@ describe(CreateUserService.name, () => {
 
   describe('execute', () => {
     it('should create a new user successfully', async () => {
-      const createUserDto: CreateUserCommand = {
+      const createUserDto = new CreateUserCommand({
         email: 'newuser@example.com',
         password: 'password123',
         fullName: 'New User',
         roles: [RoleEnum.USER],
-      };
+        adminId,
+      });
 
       const adminUser = new UserModel({
         id: adminId,
@@ -79,24 +84,12 @@ describe(CreateUserService.name, () => {
         }),
       );
 
-      const result = await service.execute(
-        new CreateUserCommand({
-          email: createUserDto.email,
-          password: createUserDto.password,
-          fullName: createUserDto.fullName,
-          phoneNumber: createUserDto.phoneNumber,
-          roles: createUserDto.roles,
-        }),
-        adminId,
-      );
+      const result = await service.execute(createUserDto);
 
       expect(repository.findById).toHaveBeenCalledWith(adminId);
       expect(repository.findByEmail).toHaveBeenCalledWith(createUserDto.email);
       expect(hashService.hash).toHaveBeenCalledWith(createUserDto.password);
-      expect(repository.createUser).toHaveBeenCalledWith(
-        expect.any(CreateUserCommand),
-        'hashed-password',
-      );
+      expect(repository.createUser).toHaveBeenCalledWith(expect.any(UserModel));
 
       expect(result).toBeInstanceOf(UserModel);
       expect(result.roles).toEqual([
@@ -129,13 +122,13 @@ describe(CreateUserService.name, () => {
             password: '123',
             fullName: 'Test',
             roles: [RoleEnum.USER],
+            adminId,
           }),
-          'admin-123',
         ),
       ).rejects.toThrow(ConflictException);
     });
 
-    it('should throw UnauthorizedException if user does not have ADMIN role', async () => {
+    it('should throw ForbiddenException if user does not have ADMIN role', async () => {
       const nonAdminUser = new UserModel({
         id: 'user-123',
         email: 'user@example.com',
@@ -153,10 +146,10 @@ describe(CreateUserService.name, () => {
             password: '123',
             fullName: 'Test',
             roles: [RoleEnum.USER],
+            adminId: 'user-123',
           }),
-          'user-123',
         ),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw UnauthorizedException if admin user not found', async () => {
@@ -169,8 +162,8 @@ describe(CreateUserService.name, () => {
             password: 'password123',
             fullName: 'John Doe',
             roles: [RoleEnum.USER],
+            adminId: 'user-123',
           }),
-          'user-123',
         ),
       ).rejects.toThrow(UnauthorizedException);
     });
@@ -181,6 +174,7 @@ describe(CreateUserService.name, () => {
         password: 'Password123!',
         fullName: 'New User',
         roles: [RoleEnum.USER],
+        adminId,
       });
 
       const adminUser = new UserModel({
@@ -197,9 +191,7 @@ describe(CreateUserService.name, () => {
         throw new Error('Hashing failed');
       });
 
-      await expect(service.execute(createUserDto, adminId)).rejects.toThrow(
-        Error,
-      );
+      await expect(service.execute(createUserDto)).rejects.toThrow(Error);
     });
 
     it('should throw an error if creating user in the database fails', async () => {
@@ -208,6 +200,7 @@ describe(CreateUserService.name, () => {
         password: 'Password123!',
         fullName: 'New User',
         roles: [RoleEnum.USER],
+        adminId,
       });
 
       const adminUser = new UserModel({
@@ -223,9 +216,7 @@ describe(CreateUserService.name, () => {
       hashService.hash.mockReturnValue('hashed-password');
       repository.createUser.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.execute(createUserDto, adminId)).rejects.toThrow(
-        Error,
-      );
+      await expect(service.execute(createUserDto)).rejects.toThrow(Error);
     });
 
     it('should throw UnauthorizedException if roles are empty', async () => {
@@ -234,9 +225,10 @@ describe(CreateUserService.name, () => {
         password: 'Password123!',
         fullName: 'New User',
         roles: [],
+        adminId,
       });
 
-      await expect(service.execute(createUserDto, adminId)).rejects.toThrow(
+      await expect(service.execute(createUserDto)).rejects.toThrow(
         UnauthorizedException,
       );
     });
@@ -247,9 +239,10 @@ describe(CreateUserService.name, () => {
         password: 'Password123!',
         fullName: 'New User',
         roles: ['INVALID_ROLE' as any],
+        adminId,
       });
 
-      await expect(service.execute(createUserDto, adminId)).rejects.toThrow(
+      await expect(service.execute(createUserDto)).rejects.toThrow(
         UnauthorizedException,
       );
     });

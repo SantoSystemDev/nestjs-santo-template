@@ -55,5 +55,6 @@ export class UserResponseDto extends BaseUserDto {
 
   constructor(data: Partial<UserResponseDto>) {
     super(data);
+    Object.assign(this, data);
   }
 }

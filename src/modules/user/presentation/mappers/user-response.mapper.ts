@@ -1,6 +1,6 @@
-import { RoleModel, UserModel } from '@user/domain/models';
-import { UserResponseDto, RoleResponseDto } from '@user/presentation/dtos';
 import { RoleEnum } from '@user/domain/enums/role.enum';
+import { RoleModel, UserModel } from '@user/domain/models';
+import { RoleResponseDto, UserResponseDto } from '@user/presentation/dtos';
 
 export class UserResponseMapper {
   static fromDomainList(users: UserModel[]): UserResponseDto[] {
@@ -9,8 +9,13 @@ export class UserResponseMapper {
 
   static fromDomain(user: UserModel): UserResponseDto {
     return new UserResponseDto({
-      ...user,
-      roles: this.fromDomainRoles(user.roles),
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      phoneNumber: user.phoneNumber,
+      avatarUrl: user.avatarUrl,
+      isActive: user.isActive,
+      roles: this.fromDomainRoles(user.roles || []),
     });
   }
 
