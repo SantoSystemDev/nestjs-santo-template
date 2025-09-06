@@ -4,7 +4,7 @@ import { JwtPayloadModel } from '@auth/domain/models';
 import {
   JwtAuthGuard,
   PasswordAuthGuard,
-} from '@auth/infrastructure/adapters/credentials';
+} from '@auth/infra/adapters/credentials';
 import {
   ExecutionContext,
   INestApplication,
