@@ -1,4 +1,4 @@
-import { RoleEnum } from '../../domain/enums/role.enum';
+import { RoleEnum } from '@user/domain/enums/role.enum';
 
 export class CreateUserCommand {
   readonly email: string;

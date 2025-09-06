@@ -1,4 +1,3 @@
-import { HashService } from '@auth/application/services';
 import {
   BadRequestException,
   ConflictException,
@@ -10,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { DomainError } from '@shared/errors';
 import { CreateUserCommand } from '@user/application/commands';
+import { HashService } from '@user/application/services';
 import {
   AdminNotFoundError,
   EmailAlreadyInUseError,

@@ -1,6 +1,6 @@
-import { HashService } from '@auth/application/services';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { HashService } from '@user/application/services';
 import { UserModel } from '@user/domain/models';
 import { UserRepositoryPort } from '@user/domain/ports';
 import { PasswordStrategy } from './password.strategy';
