@@ -33,12 +33,7 @@ describe(AuthController.name, () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        {
-          provide: AuthService,
-          useValue: mockAuthService,
-        },
-      ],
+      providers: [{ provide: AuthService, useValue: mockAuthService }],
     })
       .overrideGuard(PasswordAuthGuard)
       .useValue({
@@ -68,7 +63,7 @@ describe(AuthController.name, () => {
     );
 
     await app.init();
-    service = module.get<AuthService>(AuthService);
+    service = module.get(AuthService);
   });
 
   afterAll(async () => {

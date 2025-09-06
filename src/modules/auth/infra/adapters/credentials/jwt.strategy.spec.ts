@@ -10,24 +10,30 @@ describe(JwtStrategy.name, () => {
   let userRepository: jest.Mocked<UserRepositoryPort>;
 
   beforeEach(async () => {
-    userRepository = {
-      findById: jest.fn(),
+    const userRepositoryMock = {
       findByEmail: jest.fn(),
+      findById: jest.fn(),
       createUser: jest.fn(),
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JwtStrategy,
-        { provide: UserRepositoryPort, useValue: userRepository },
+        { provide: UserRepositoryPort, useValue: userRepositoryMock },
       ],
     }).compile();
 
-    strategy = module.get<JwtStrategy>(JwtStrategy);
+    strategy = module.get(JwtStrategy);
+    userRepository = module.get(UserRepositoryPort);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(strategy).toBeDefined();
+    expect(userRepository).toBeDefined();
   });
 
   it('should validate a valid user and return payload', async () => {

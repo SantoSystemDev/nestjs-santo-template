@@ -1,22 +1,23 @@
+import { HashService } from '@auth/application/services';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserModel } from '@user/domain/models';
-import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
+import { UserRepositoryPort } from '@user/domain/ports';
 import { PasswordStrategy } from './password.strategy';
 
 describe(PasswordStrategy.name, () => {
   let strategy: PasswordStrategy;
   let userRepository: jest.Mocked<UserRepositoryPort>;
-  let hashService: jest.Mocked<HashServicePort>;
+  let hashService: jest.Mocked<HashService>;
 
   beforeEach(async () => {
-    userRepository = {
+    const userRepositoryMock = {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       createUser: jest.fn(),
     } as any;
 
-    hashService = {
+    const hashServiceMock = {
       hash: jest.fn(),
       compare: jest.fn(),
     } as any;
@@ -24,16 +25,24 @@ describe(PasswordStrategy.name, () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PasswordStrategy,
-        { provide: UserRepositoryPort, useValue: userRepository },
-        { provide: HashServicePort, useValue: hashService },
+        { provide: UserRepositoryPort, useValue: userRepositoryMock },
+        { provide: HashService, useValue: hashServiceMock },
       ],
     }).compile();
 
-    strategy = module.get<PasswordStrategy>(PasswordStrategy);
+    strategy = module.get(PasswordStrategy);
+    userRepository = module.get(UserRepositoryPort);
+    hashService = module.get(HashService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(strategy).toBeDefined();
+    expect(userRepository).toBeDefined();
+    expect(hashService).toBeDefined();
   });
 
   it('should validate user credentials and return payload', async () => {

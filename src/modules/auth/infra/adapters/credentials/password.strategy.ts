@@ -1,8 +1,9 @@
+import { HashService } from '@auth/application/services';
 import { JwtPayloadModel } from '@auth/domain/models';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { RoleEnum } from '@user/domain/enums/role.enum';
-import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
+import { UserRepositoryPort } from '@user/domain/ports';
 import { Strategy } from 'passport-local';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class PasswordStrategy extends PassportStrategy(Strategy) {
 
   constructor(
     private readonly userRepository: UserRepositoryPort,
-    private readonly hashService: HashServicePort,
+    private readonly hashService: HashService,
   ) {
     super({
       usernameField: 'email',
