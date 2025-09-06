@@ -3,16 +3,16 @@ import { PrismaHealthIndicator } from '@nestjs/terminus';
 import { PrismaService } from '@shared/database';
 
 @Injectable()
-export class PrismaHealthService {
+export class DatabaseHealthService {
   constructor(
     private readonly prismaHealthIndicator: PrismaHealthIndicator,
-    private readonly prismaService: PrismaService,
+    private readonly databaseService: PrismaService,
   ) {}
 
   async check() {
     return await this.prismaHealthIndicator.pingCheck(
       'database',
-      this.prismaService,
+      this.databaseService,
       {
         timeout: 500,
       },

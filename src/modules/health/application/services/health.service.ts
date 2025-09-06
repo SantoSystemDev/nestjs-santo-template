@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { HealthCheckService } from '@nestjs/terminus';
+import { DatabaseHealthService } from './database-health.service';
 import { DiskHealthService } from './disk-health.service';
 import { MemoryHealthService } from './memory-health.service';
-import { PrismaHealthService } from './prisma-health.service';
 
 @Injectable()
 export class HealthService {
   constructor(
     private readonly healthCheckService: HealthCheckService,
-    private readonly prismaHealthService: PrismaHealthService,
+    private readonly prismaHealthService: DatabaseHealthService,
     private readonly diskHealthService: DiskHealthService,
     private readonly memoryHealthService: MemoryHealthService,
   ) {}

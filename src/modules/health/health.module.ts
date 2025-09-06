@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { PrismaService } from '@shared/database';
 import {
+  DatabaseHealthService,
   DiskHealthService,
   HealthService,
   MemoryHealthService,
-  PrismaHealthService,
 } from './application/services';
 import { HealthController } from './presentation/controllers';
 
@@ -14,7 +14,7 @@ import { HealthController } from './presentation/controllers';
   controllers: [HealthController],
   providers: [
     HealthService,
-    PrismaHealthService,
+    DatabaseHealthService,
     DiskHealthService,
     MemoryHealthService,
     PrismaService,
