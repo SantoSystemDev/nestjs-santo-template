@@ -1,4 +1,4 @@
-import { JwtAuthGuard } from '@auth/infrastructure/adapters/credentials';
+import { JwtAuthGuard } from '@auth/infra/adapters/credentials';
 import {
   ConflictException,
   INestApplication,
