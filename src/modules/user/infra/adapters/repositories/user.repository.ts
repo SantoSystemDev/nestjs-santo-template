@@ -3,20 +3,20 @@ import { PrismaService } from '@shared/database';
 import { BaseRepository } from '@shared/database/base.repository';
 import { RoleModel, UserModel } from '@user/domain/models';
 import { UserRepositoryPort } from '@user/domain/ports';
-import { UserWithRoles } from '@user/infrastructure/adapters/repositories/interfaces';
+import { UserWithRoles } from '@user/infra/adapters/repositories/interfaces';
 
 @Injectable()
 export class UserRepository
   extends BaseRepository
   implements UserRepositoryPort
 {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+  constructor(databaseService: PrismaService) {
+    super(databaseService);
   }
 
   async findByEmail(email: string): Promise<UserModel | null> {
     return this.executeQuery(async () => {
-      const user = await this.prisma.user.findUnique({
+      const user = await this.databaseService.user.findUnique({
         where: { email },
         include: { roles: true },
       });
@@ -26,7 +26,7 @@ export class UserRepository
 
   async findById(userId: string): Promise<UserModel | null> {
     return this.executeQuery(async () => {
-      const user = await this.prisma.user.findUnique({
+      const user = await this.databaseService.user.findUnique({
         where: { id: userId },
         include: { roles: true },
       });
@@ -36,7 +36,7 @@ export class UserRepository
 
   async createUser(user: UserModel): Promise<UserModel> {
     return this.executeQuery(async () => {
-      const createdUser = await this.prisma.user.create({
+      const createdUser = await this.databaseService.user.create({
         data: {
           email: user.email,
           password: user.password, // Assume que já está hasheado
@@ -58,7 +58,7 @@ export class UserRepository
 
   async update(user: UserModel): Promise<UserModel> {
     return this.executeQuery(async () => {
-      const updatedUser = await this.prisma.user.update({
+      const updatedUser = await this.databaseService.user.update({
         where: { id: user.id },
         data: {
           email: user.email,
@@ -75,7 +75,7 @@ export class UserRepository
 
   async delete(userId: string): Promise<void> {
     return this.executeQuery(async () => {
-      await this.prisma.user.delete({
+      await this.databaseService.user.delete({
         where: { id: userId },
       });
     });
@@ -86,7 +86,7 @@ export class UserRepository
     excludeUserId: string,
   ): Promise<UserModel | null> {
     return this.executeQuery(async () => {
-      const user = await this.prisma.user.findFirst({
+      const user = await this.databaseService.user.findFirst({
         where: {
           email,
           id: { not: excludeUserId },
