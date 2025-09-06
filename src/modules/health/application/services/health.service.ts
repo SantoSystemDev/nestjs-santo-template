@@ -8,15 +8,15 @@ import { MemoryHealthService } from './memory-health.service';
 export class HealthService {
   constructor(
     private readonly healthCheckService: HealthCheckService,
-    private readonly prismaHealthService: DatabaseHealthService,
+    private readonly databaseHealthCheckService: DatabaseHealthService,
     private readonly diskHealthService: DiskHealthService,
     private readonly memoryHealthService: MemoryHealthService,
   ) {}
 
   async check() {
     return await this.healthCheckService.check([
-      // Check Prisma
-      async () => this.prismaHealthService.check(),
+      // Check Database
+      async () => this.databaseHealthCheckService.check(),
       // Check Disk
       async () => this.diskHealthService.check(),
       // Check Memory
