@@ -22,21 +22,23 @@ describe(PrismaService.name, () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PrismaService,
-        {
-          provide: PrismaClient,
-          useValue: mockPrismaService,
-        },
+        { provide: PrismaClient, useValue: mockPrismaService },
       ],
     }).compile();
 
-    service = module.get<PrismaService>(PrismaService);
+    service = module.get(PrismaService);
     service.$connect = mockPrismaService.$connect;
     service.$disconnect = mockPrismaService.$disconnect;
     service.$transaction = mockPrismaService.$transaction;
   });
 
   afterAll(async () => {
+    jest.clearAllMocks();
     await service.$disconnect();
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
   });
 
   describe('Initialization and Destruction', () => {
