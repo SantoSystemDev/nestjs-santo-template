@@ -7,9 +7,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { HashService } from '@user/application/services';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { UserModel } from '@user/domain/models';
-import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
+import { UserRepositoryPort } from '@user/domain/ports';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +18,7 @@ export class AuthService {
 
   constructor(
     private readonly userRepository: UserRepositoryPort,
-    private readonly hashService: HashServicePort,
+    private readonly hashService: HashService,
     private readonly jwtService: JwtService,
   ) {}
 

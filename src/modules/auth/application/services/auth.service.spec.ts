@@ -4,30 +4,28 @@ import { JwtPayloadModel } from '@auth/domain/models';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { HashService } from '@user/application/services';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { RoleModel, UserModel } from '@user/domain/models';
-import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
+import { UserRepositoryPort } from '@user/domain/ports';
 
 describe(AuthService.name, () => {
   let service: AuthService;
   let userRepository: jest.Mocked<UserRepositoryPort>;
-  let hashService: jest.Mocked<HashServicePort>;
+  let hashService: jest.Mocked<HashService>;
   let jwtService: jest.Mocked<JwtService>;
 
   beforeEach(async () => {
-    const userRepositoryMock: jest.Mocked<UserRepositoryPort> = {
+    const userRepositoryMock = {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       createUser: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      findByEmailAndNotId: jest.fn(),
-    };
+    } as any;
 
-    const hashServiceMock: jest.Mocked<HashServicePort> = {
+    const hashServiceMock = {
       hash: jest.fn(),
       compare: jest.fn(),
-    };
+    } as any;
 
     const jwtServiceMock: jest.Mocked<JwtService> = {
       sign: jest.fn(),
@@ -37,14 +35,14 @@ describe(AuthService.name, () => {
       providers: [
         AuthService,
         { provide: UserRepositoryPort, useValue: userRepositoryMock },
-        { provide: HashServicePort, useValue: hashServiceMock },
+        { provide: HashService, useValue: hashServiceMock },
         { provide: JwtService, useValue: jwtServiceMock },
       ],
     }).compile();
 
-    service = module.get<AuthService>(AuthService);
+    service = module.get(AuthService);
     userRepository = module.get(UserRepositoryPort);
-    hashService = module.get(HashServicePort);
+    hashService = module.get(HashService);
     jwtService = module.get(JwtService);
   });
 
