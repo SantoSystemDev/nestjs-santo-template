@@ -19,7 +19,7 @@ RESET := $(shell tput -Txterm sgr0)
 .PHONY: setup
 setup: ##@INIT Initialize environment configuration
 	@echo "$(CYAN)[ENV]$(RESET) Setting up environment for $(PROJECT_NAME)..."
-	@cp .env.template .env || echo "$(YELLOW).env already exists, skipping...$(RESET)"
+	@cp .env.example .env || echo "$(YELLOW).env already exists, skipping...$(RESET)"
 	@echo "$(GREEN)[OK]$(RESET) Setup complete!"
 
 ###################################################################################################
