@@ -1,4 +1,3 @@
-import { HashService } from '@auth/application/services';
 import {
   ConflictException,
   ForbiddenException,
@@ -6,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateUserCommand } from '@user/application/commands';
+import { HashService } from '@user/application/services/hash.service';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { RoleModel, UserModel } from '@user/domain/models';
 import { UserRepositoryPort } from '@user/domain/ports';

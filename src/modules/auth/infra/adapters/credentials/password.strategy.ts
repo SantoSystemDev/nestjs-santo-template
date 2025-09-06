@@ -1,7 +1,7 @@
-import { HashService } from '@auth/application/services';
 import { JwtPayloadModel } from '@auth/domain/models';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { HashService } from '@user/application/services';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { UserRepositoryPort } from '@user/domain/ports';
 import { Strategy } from 'passport-local';
