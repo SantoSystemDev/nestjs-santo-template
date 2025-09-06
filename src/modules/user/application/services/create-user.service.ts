@@ -1,3 +1,4 @@
+import { HashService } from '@auth/application/services';
 import {
   BadRequestException,
   ConflictException,
@@ -9,14 +10,14 @@ import {
 } from '@nestjs/common';
 import { DomainError } from '@shared/errors';
 import { CreateUserCommand } from '@user/application/commands';
-import { UserModel } from '@user/domain/models';
-import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
 import {
   AdminNotFoundError,
   EmailAlreadyInUseError,
   InsufficientPermissionsError,
   UserNotFoundError,
-} from '../../domain/errors';
+} from '@user/domain/errors';
+import { UserModel } from '@user/domain/models';
+import { UserRepositoryPort } from '@user/domain/ports';
 
 @Injectable()
 export class CreateUserService {
@@ -24,7 +25,7 @@ export class CreateUserService {
 
   constructor(
     private readonly repository: UserRepositoryPort,
-    private readonly hashService: HashServicePort,
+    private readonly hashService: HashService,
   ) {}
 
   async execute(command: CreateUserCommand): Promise<UserModel> {

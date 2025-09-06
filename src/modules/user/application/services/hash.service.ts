@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { HashServicePort } from '@user/domain/ports';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class HashService implements HashServicePort {
+export class HashService {
   private readonly logger = new Logger(HashService.name);
 
   hash(password: string): string {

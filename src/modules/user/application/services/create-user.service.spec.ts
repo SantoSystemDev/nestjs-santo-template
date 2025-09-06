@@ -1,3 +1,4 @@
+import { HashService } from '@auth/application/services';
 import {
   ConflictException,
   ForbiddenException,
@@ -7,40 +8,39 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CreateUserCommand } from '@user/application/commands';
 import { RoleEnum } from '@user/domain/enums/role.enum';
 import { RoleModel, UserModel } from '@user/domain/models';
-import { HashServicePort, UserRepositoryPort } from '@user/domain/ports';
+import { UserRepositoryPort } from '@user/domain/ports';
 import { CreateUserService } from './create-user.service';
 
 describe(CreateUserService.name, () => {
   let service: CreateUserService;
   let repository: jest.Mocked<UserRepositoryPort>;
-  let hashService: jest.Mocked<HashServicePort>;
+  let hashService: jest.Mocked<HashService>;
 
   const adminId = 'admin-123';
 
   beforeEach(async () => {
+    const userRepositoryMock = {
+      findByEmail: jest.fn(),
+      findById: jest.fn(),
+      createUser: jest.fn(),
+    } as any;
+
+    const hashServiceMock = {
+      hash: jest.fn(),
+      compare: jest.fn(),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateUserService,
-        {
-          provide: UserRepositoryPort,
-          useValue: {
-            findByEmail: jest.fn(),
-            findById: jest.fn(),
-            createUser: jest.fn(),
-          },
-        },
-        {
-          provide: HashServicePort,
-          useValue: {
-            hash: jest.fn(),
-          },
-        },
+        { provide: UserRepositoryPort, useValue: userRepositoryMock },
+        { provide: HashService, useValue: hashServiceMock },
       ],
     }).compile();
 
-    service = module.get<CreateUserService>(CreateUserService);
+    service = module.get(CreateUserService);
     repository = module.get(UserRepositoryPort);
-    hashService = module.get(HashServicePort);
+    hashService = module.get(HashService);
   });
 
   afterEach(() => {
