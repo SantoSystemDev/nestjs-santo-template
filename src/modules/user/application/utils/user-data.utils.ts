@@ -1,6 +1,6 @@
 import {
   normalizeEmail,
-  normalizeFullName,
+  normalizeName,
   normalizePhoneNumber,
 } from '@shared/utils';
 
@@ -11,7 +11,7 @@ export const normalizeUserData = (data: {
 }) => {
   return {
     ...(data.email && { email: normalizeEmail(data.email) }),
-    ...(data.fullName && { fullName: normalizeFullName(data.fullName) }),
+    ...(data.fullName && { fullName: normalizeName(data.fullName) }),
     ...(data.phoneNumber !== undefined && {
       phoneNumber: normalizePhoneNumber(data.phoneNumber),
     }),
