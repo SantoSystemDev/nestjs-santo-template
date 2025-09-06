@@ -3,7 +3,7 @@ import { PrismaService } from './prisma.service';
 
 @Injectable()
 export abstract class BaseRepository {
-  constructor(protected readonly prisma: PrismaService) {}
+  constructor(protected readonly databaseService: PrismaService) {}
 
   /**
    * Executa uma operação do Prisma com tratamento automático de erros
@@ -12,7 +12,7 @@ export abstract class BaseRepository {
     try {
       return await operation();
     } catch (error) {
-      throw this.prisma.handleDatabaseError(error);
+      throw this.databaseService.handleDatabaseError(error);
     }
   }
 
@@ -23,9 +23,9 @@ export abstract class BaseRepository {
     callback: (prisma: PrismaService) => Promise<T>,
   ): Promise<T> {
     try {
-      return await this.prisma.$transaction(callback);
+      return await this.databaseService.$transaction(callback);
     } catch (error) {
-      throw this.prisma.handleDatabaseError(error);
+      throw this.databaseService.handleDatabaseError(error);
     }
   }
 }
