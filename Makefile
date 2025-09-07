@@ -1,5 +1,5 @@
 #!make
-SHELL = bash
+SHELL := /bin/bash
 
 ###################################################################################################
 ## INIT
@@ -105,7 +105,7 @@ db-seed: ##@PRISMA Seed database with initial data
 .PHONY: up
 up: ##@DOCKER Start Docker containers
 	@echo "$(CYAN)[DOCKER]$(RESET) Starting containers..."
-	@docker-compose up -d
+	@docker-compose up -d --build
 	@echo "$(GREEN)[OK]$(RESET) Containers are running!"
 
 .PHONY: down
@@ -122,6 +122,12 @@ clean: ##@DOCKER Stop containers and remove volumes
 	@echo "$(CYAN)[CLEAN]$(RESET) Cleaning up containers and volumes..."
 	@docker-compose down -v
 	@echo "$(GREEN)[OK]$(RESET) Clean up complete!"
+
+.PHONY: logs
+logs: ##@DOCKER View Docker container logs
+  @echo "$(CYAN)[LOGS]$(RESET) Fetching container logs..."
+  @docker-compose logs -f app
+  @echo "$(GREEN)[OK]$(RESET) Logs fetched!"
 
 ###################################################################################################
 ## HELP

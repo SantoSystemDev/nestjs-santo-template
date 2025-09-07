@@ -1,22 +1,29 @@
-version: '3.8'
 
 services:
-  postgres:
+  database:
     image: postgres:17.2
-    container_name: postgres-template
+    container_name: database_app
     environment:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
-    ports:
-      - "5433:5432"
+    ports: ["5433:5432"]
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - database_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    command: sh -c "npm run generate && npm run migrate:dev && npm run start:dev"
+    env_file: .env
+    ports: ["3000:3000"]
+    depends_on:
+      database:
+        condition: service_healthy
 
 volumes:
-  postgres-data:
+  database_data:
