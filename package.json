@@ -20,15 +20,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "generate": "prisma generate",
-    "migrate:dev": "npx prisma migrate dev",
-    "migrate:deploy": "npx prisma migrate deploy",
-    "studio": "npx prisma studio",
-    "db:pull": "npx prisma db pull",
-    "db:push": "npx prisma db push",
-    "db:seed": "npx prisma db seed"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "studio": "npx prisma studio"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
