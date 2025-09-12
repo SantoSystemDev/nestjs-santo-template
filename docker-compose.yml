@@ -22,7 +22,8 @@ services:
     container_name: auth_flyway
     command: -configFiles=/flyway/conf/flyway.conf migrate
     volumes:
-      - ./flyway:/flyway
+    - ./flyway:/flyway          # Arquivos locais (config, sql)
+    - flyway_data:/flyway/data  # Volume persistente para dados
     environment:
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
@@ -33,3 +34,4 @@ services:
 
 volumes:
   database_data:
+  flyway_data:
