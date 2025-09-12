@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,28 +13,54 @@ generator seed {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String
-  fullName    String   @map("full_name")
-  avatarUrl   String?  @map("avatar_url")
-  phoneNumber String?  @map("phone_number")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  roles       Role[] // N-N
+  id            String   @id @default(uuid())
+  fullName      String   @map("full_name")
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  avatarUrl     String?  @map("avatar_url")
+  phoneNumber   String?  @map("phone_number")
+  isActive      Boolean  @default(true) @map("is_active")
+  emailVerified Boolean  @default(false) @map("email_verified")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  @@index([email, isActive])
+  roles         UserRole[] // 1:N relationship with UserRole
+  refreshTokens RefreshToken[] // 1:N relationship with RefreshToken
+
   @@map("users")
 }
 
-model Role {
+model UserRole {
   id          String   @id @default(uuid())
-  name        String   @unique
+  name        String // Role name, e.g., "admin", "user"
   description String?
+  userId      String   @map("user_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  users       User[] // N-N
 
-  @@map("roles")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name]) // Ensure a user cannot have the same role multiple times
+  @@index([userId])
+  @@map("user_roles")
+}
+
+model RefreshToken {
+  id            String    @id @default(uuid())
+  jti           String    @unique
+  tokenHash     String    @map("token_hash")
+  expiresAt     DateTime  @map("expires_at")
+  userId        String    @map("user_id")
+  deviceId      String?   @map("device_id")
+  ip            String?
+  userAgent     String?   @map("user_agent")
+  revokedAt     DateTime? @map("revoked_at")
+  replacedByJti String?   @map("replaced_by_jti")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("refresh_tokens")
 }
