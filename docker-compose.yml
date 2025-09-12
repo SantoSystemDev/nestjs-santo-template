@@ -3,6 +3,7 @@ services:
   database:
     image: postgres:17.2
     container_name: database_app
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
@@ -16,11 +17,16 @@ services:
       timeout: 5s
       retries: 10
 
-  app:
-    build: .
-    command: sh -c "npm run generate && npm run migrate:dev && npm run start:dev"
-    env_file: .env
-    ports: ["3000:3000"]
+  flyway:
+    image: flyway/flyway:10
+    container_name: auth_flyway
+    command: -configFiles=/flyway/conf/flyway.conf migrate
+    volumes:
+      - ./flyway:/flyway
+    environment:
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
     depends_on:
       database:
         condition: service_healthy
