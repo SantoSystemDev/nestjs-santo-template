@@ -70,7 +70,7 @@ studio: ##@PRISMA Open Prisma Studio
 
 .PHONY: db-setup
 db-setup: up gen ##@DATABASE Full database setup: Docker + Flyway + Prisma
-  @echo "$(GREEN)[OK]$(RESET) Database setup complete!"
+	@echo "$(GREEN)[OK]$(RESET) Database setup complete!"
 
 ###################################################################################################
 ## DOCKER COMMANDS
@@ -99,9 +99,9 @@ clean: ##@DOCKER Stop containers and remove volumes
 
 .PHONY: logs
 logs: ##@DOCKER View Docker container logs
-  @echo "$(CYAN)[LOGS]$(RESET) Fetching container logs..."
-  @docker-compose logs -f app
-  @echo "$(GREEN)[OK]$(RESET) Logs fetched!"
+	@echo "$(CYAN)[LOGS]$(RESET) Fetching container logs..."
+	@docker-compose logs -f app
+	@echo "$(GREEN)[OK]$(RESET) Logs fetched!"
 
 ###################################################################################################
 ## HELP
