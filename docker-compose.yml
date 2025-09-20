@@ -1,7 +1,7 @@
 
 services:
   database:
-    image: postgres:17.2
+    image: postgres:17
     container_name: database_app
     restart: unless-stopped
     environment:
@@ -18,12 +18,13 @@ services:
       retries: 10
 
   flyway:
-    image: flyway/flyway:10
-    container_name: auth_flyway
-    command: -configFiles=/flyway/conf/flyway.conf migrate
+    image: flyway/flyway:11
+    container_name: flyway_app
+    command: ["-configFiles=/flyway/conf/flyway.conf", "migrate"]
     volumes:
-    - ./flyway:/flyway          # Arquivos locais (config, sql)
-    - flyway_data:/flyway/data  # Volume persistente para dados
+    - ./flyway/conf:/flyway/conf              # Config files
+    - ./flyway/migrations:/flyway/migrations  # Migration files
+    - flyway_data:/flyway/data                # Volume persistente para dados
     environment:
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
