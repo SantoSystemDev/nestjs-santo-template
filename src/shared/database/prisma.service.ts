@@ -71,8 +71,6 @@ export class PrismaService
 
   /**
    * Executes a transaction using Prisma.
-   * @param callback Function that receives the PrismaClient instance.
-   * @returns The result of the transaction.
    */
   async transaction<T>(
     callback: (prisma: PrismaClient) => Promise<T>,
