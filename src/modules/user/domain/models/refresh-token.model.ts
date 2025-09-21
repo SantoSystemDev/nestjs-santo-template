@@ -4,10 +4,11 @@ export class RefreshTokenModel {
   readonly jti: string;
   readonly tokenHash: string;
   readonly deviceId?: string;
-  readonly ip?: string;
+  readonly ipAddress?: string;
   readonly userAgent?: string;
   readonly expiresAt: Date;
   readonly revokedAt?: Date;
+  readonly revokedReason?: string;
   readonly replacedByJti?: string;
 
   constructor(data: Partial<RefreshTokenModel>) {

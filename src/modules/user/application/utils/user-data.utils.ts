@@ -2,18 +2,23 @@ import {
   normalizeEmail,
   normalizeName,
   normalizePhoneNumber,
+  normalizeUrl,
 } from '@shared/utils';
 
 export const normalizeUserData = (data: {
-  email?: string;
   fullName?: string;
+  email?: string;
   phoneNumber?: string;
+  avatarUrl?: string;
+  isActive?: boolean;
 }) => {
   return {
-    ...(data.email && { email: normalizeEmail(data.email) }),
     ...(data.fullName && { fullName: normalizeName(data.fullName) }),
-    ...(data.phoneNumber !== undefined && {
+    ...(data.email && { email: normalizeEmail(data.email) }),
+    ...(data.phoneNumber && {
       phoneNumber: normalizePhoneNumber(data.phoneNumber),
     }),
+    ...(data.avatarUrl && { avatarUrl: normalizeUrl(data.avatarUrl) }),
+    ...(data.isActive && { isActive: data.isActive }),
   };
 };

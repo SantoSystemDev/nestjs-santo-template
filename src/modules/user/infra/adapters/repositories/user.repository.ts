@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/database';
 import { BaseRepository } from '@shared/database/base.repository';
+import { RoleEnum } from '@user/domain/enums/role.enum';
 import { RoleModel, UserModel } from '@user/domain/models';
 import { UserRepositoryPort } from '@user/domain/ports';
 import { UserWithRoles } from '@user/infra/adapters/repositories/interfaces';
@@ -34,20 +35,25 @@ export class UserRepository
     });
   }
 
-  async createUser(user: UserModel): Promise<UserModel> {
-    return this.executeQuery(async () => {
+  async create(user: UserModel): Promise<UserModel> {
+    return this.executeTransaction(async () => {
       const createdUser = await this.databaseService.user.create({
         data: {
           email: user.email,
-          password: user.password, // Assume que já está hasheado
+          passwordHash: user.passwordHash, // Assume que já está hasheado
           fullName: user.fullName,
           phoneNumber: user.phoneNumber,
           isActive: true,
+          emailVerified: false,
+          // cria as roles junto ao usuário; o Prisma seta userId automaticamente
           roles: {
-            connect:
-              user.roles?.map((role) => ({
+            createMany: {
+              data: user.roles?.map((role) => ({
                 name: role.name,
-              })) || [],
+                description: role.description ?? null,
+              })),
+              skipDuplicates: true, // banco tem @@unique([userId, name]); evita erro
+            },
           },
         },
         include: { roles: true },
@@ -57,7 +63,7 @@ export class UserRepository
   }
 
   async update(user: UserModel): Promise<UserModel> {
-    return this.executeQuery(async () => {
+    return this.executeTransaction(async () => {
       const updatedUser = await this.databaseService.user.update({
         where: { id: user.id },
         data: {
@@ -65,6 +71,7 @@ export class UserRepository
           fullName: user.fullName,
           phoneNumber: user.phoneNumber,
           isActive: user.isActive,
+          emailVerified: user.emailVerified,
           // Note: Roles are not updated here. Role management should be handled separately.
         },
         include: { roles: true },
@@ -78,6 +85,15 @@ export class UserRepository
       await this.databaseService.user.delete({
         where: { id: userId },
       });
+    });
+  }
+
+  async findRoles(userId: string): Promise<RoleEnum[]> {
+    return this.executeQuery(async () => {
+      const roles = await this.databaseService.userRole.findMany({
+        where: { userId },
+      });
+      return roles.map((role) => role.name as RoleEnum);
     });
   }
 
@@ -99,10 +115,8 @@ export class UserRepository
 
   /**
    * Maps a UserWithRoles object to a UserModel.
-   * Converts the user's roles to RoleModel instances.
    *
-   * @param user UserWithRoles object to map
-   * @returns A UserModel object if user is defined, null otherwise
+   * Converts the user's roles to RoleModel instances.
    */
   private mapToDomain(user?: UserWithRoles): UserModel | null {
     return user

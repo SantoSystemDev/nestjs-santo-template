@@ -33,10 +33,11 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   jti VARCHAR NOT NULL UNIQUE,
   token_hash VARCHAR NOT NULL,             -- SHA-256 of RT + pepper
   device_id VARCHAR,
-  ip INET,
+  ip_address INET,
   user_agent VARCHAR,
   expires_at TIMESTAMPTZ NOT NULL,
   revoked_at TIMESTAMPTZ,
+  revoked_reason VARCHAR,
   replaced_by_jti VARCHAR,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

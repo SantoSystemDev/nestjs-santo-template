@@ -27,9 +27,9 @@ model User {
 
 model UserRole {
   id          String   @id @default(uuid())
+  userId      String   @map("user_id")
   name        String // Role name, e.g., "admin", "user"
   description String?
-  userId      String   @map("user_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -46,10 +46,11 @@ model RefreshToken {
   jti           String    @unique
   tokenHash     String    @map("token_hash")
   deviceId      String?   @map("device_id")
-  ip            String?
+  ipAddress     String?   @map("ip_address")
   userAgent     String?   @map("user_agent")
   expiresAt     DateTime  @map("expires_at")
   revokedAt     DateTime? @map("revoked_at")
+  revokedReason String?   @map("revoked_reason")
   replacedByJti String?   @map("replaced_by_jti")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
