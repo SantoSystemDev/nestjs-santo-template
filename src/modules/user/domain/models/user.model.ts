@@ -1,7 +1,8 @@
-import { RoleEnum } from '../enums/role.enum';
+import { normalizeUserData } from '@user/application/utils/user-data.utils';
+import { arrayNotEmpty, isEmail, isEmpty, isIn } from 'class-validator';
+import { ROLE_VALUES, RoleEnum } from '../enums/role.enum';
 import {
   AdminNotFoundError,
-  EmailAlreadyInUseError,
   EmptyRolesError,
   InsufficientPermissionsError,
   InvalidEmailFormatError,
@@ -12,18 +13,23 @@ import { RoleModel } from './role.model';
 
 export class UserModel {
   readonly id: string;
-  readonly email: string;
-  readonly password: string;
   readonly fullName: string;
+  readonly email: string;
+  readonly passwordHash: string;
   readonly avatarUrl?: string;
   readonly phoneNumber?: string;
   readonly isActive: boolean;
-  readonly roles?: RoleModel[] = [];
+  readonly emailVerified: boolean;
+  readonly roles?: RoleModel[] = []; // Lista de roles associadas ao usuário
+  readonly refreshTokens?: string[] = []; // Lista de refresh tokens associados (IDs ou tokens, conforme necessário)
 
   constructor(data: Partial<UserModel>) {
     Object.assign(this, data);
   }
 
+  /**
+   * Verifica se o usuário possui um papel específico
+   */
   hasRole(roleName: string): boolean {
     return this.roles?.some((role) => role.name === roleName);
   }
@@ -41,24 +47,21 @@ export class UserModel {
    * Factory method para criar um novo usuário com validações
    */
   static create(data: {
-    email: string;
-    password: string;
     fullName: string;
+    email: string;
+    passwordHash: string;
     roles: string[];
     phoneNumber?: string;
     avatarUrl?: string;
   }): UserModel {
     // Validar dados básicos
-    this.validateEmail(data.email);
     this.validateFullName(data.fullName);
+    this.validateEmail(data.email);
     this.validateRoles(data.roles);
 
     return new UserModel({
-      email: data.email.trim().toLowerCase(),
-      password: data.password,
-      fullName: data.fullName.trim(),
-      phoneNumber: data.phoneNumber?.trim(),
-      avatarUrl: data.avatarUrl?.trim(),
+      ...data,
+      ...normalizeUserData(data),
       isActive: true,
       roles: data.roles.map(
         (role) => new RoleModel({ name: role as RoleEnum }),
@@ -67,38 +70,24 @@ export class UserModel {
   }
 
   /**
-   * Valida se um admin existe e tem permissões
+   * Valida se possui permissões de admin
    */
-  static validateAdminPermissions(adminUser: UserModel | null): void {
+  static validateAdminCanCreateUsers(adminUser: UserModel): void {
     if (!adminUser) {
       throw new AdminNotFoundError();
     }
-
     adminUser.validateCanCreateUsers();
-  }
-
-  /**
-   * Valida se email está disponível
-   */
-  static validateEmailAvailability(
-    existingUser: UserModel | null,
-    email: string,
-  ): void {
-    if (existingUser) {
-      throw new EmailAlreadyInUseError(email);
-    }
   }
 
   /**
    * Valida formato do email
    */
   private static validateEmail(email: string): void {
-    if (!email || !email.trim()) {
+    if (isEmpty(email)) {
       throw new RequiredFieldError('Email');
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
+    if (!isEmail(email)) {
       throw new InvalidEmailFormatError(email);
     }
   }
@@ -107,8 +96,14 @@ export class UserModel {
    * Valida nome completo
    */
   private static validateFullName(fullName: string): void {
-    if (!fullName || !fullName.trim()) {
+    if (isEmpty(fullName)) {
       throw new RequiredFieldError('Full name');
+    }
+
+    if (fullName.length < 3) {
+      throw new RequiredFieldError(
+        'Full name must be at least 3 characters long',
+      );
     }
   }
 
@@ -116,13 +111,13 @@ export class UserModel {
    * Valida roles do usuário
    */
   private static validateRoles(roles: string[]): void {
-    if (!roles || roles.length === 0) {
+    // Valida se roles é um array válido e não vazio
+    if (!arrayNotEmpty(roles)) {
       throw new EmptyRolesError();
     }
 
-    const validRoles = Object.values(RoleEnum) as string[];
-    const invalidRoles = roles.filter((role) => !validRoles.includes(role));
-
+    // Encontra roles inválidos e lança erro se existirem
+    const invalidRoles = roles.filter((role) => !isIn(role, ROLE_VALUES));
     if (invalidRoles.length > 0) {
       throw new InvalidRoleError(invalidRoles.join(', '));
     }

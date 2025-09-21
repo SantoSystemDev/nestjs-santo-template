@@ -77,9 +77,4 @@ export class PrismaService
   ): Promise<T> {
     return await this.$transaction(callback);
   }
-
-  /**
-   * Optional: Middleware or hooks can be added here
-   * if needed for logging, metrics, etc.
-   */
 }

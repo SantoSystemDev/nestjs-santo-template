@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS users (
 -- Free-text role model (no Prisma enum)
 CREATE TABLE IF NOT EXISTS user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR NOT NULL,
   description VARCHAR,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -29,6 +29,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_user_name ON user_roles(user_id
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   jti VARCHAR NOT NULL UNIQUE,
   token_hash VARCHAR NOT NULL,             -- SHA-256 of RT + pepper
   device_id VARCHAR,
@@ -37,7 +38,6 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   expires_at TIMESTAMPTZ NOT NULL,
   revoked_at TIMESTAMPTZ,
   replaced_by_jti VARCHAR,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

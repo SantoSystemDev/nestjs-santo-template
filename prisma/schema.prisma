@@ -42,13 +42,13 @@ model UserRole {
 
 model RefreshToken {
   id            String    @id @default(uuid())
+  userId        String    @map("user_id")
   jti           String    @unique
   tokenHash     String    @map("token_hash")
-  expiresAt     DateTime  @map("expires_at")
-  userId        String    @map("user_id")
   deviceId      String?   @map("device_id")
   ip            String?
   userAgent     String?   @map("user_agent")
+  expiresAt     DateTime  @map("expires_at")
   revokedAt     DateTime? @map("revoked_at")
   replacedByJti String?   @map("replaced_by_jti")
   createdAt     DateTime  @default(now()) @map("created_at")
