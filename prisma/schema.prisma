@@ -8,55 +8,114 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  fullName      String   @map("full_name")
-  email         String   @unique
-  passwordHash  String   @map("password_hash")
-  avatarUrl     String?  @map("avatar_url")
-  phoneNumber   String?  @map("phone_number")
-  isActive      Boolean  @default(true) @map("is_active")
-  emailVerified Boolean  @default(false) @map("email_verified")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName        String           @map("full_name") @db.VarChar
+  email           String           @unique @db.VarChar
+  passwordHash    String           @map("password_hash") @db.VarChar
+  avatarUrl       String?          @map("avatar_url") @db.VarChar
+  phoneNumber     String?          @map("phone_number") @db.VarChar
+  isActive        Boolean          @default(true) @map("is_active")
+  emailVerified   Boolean          @default(false) @map("email_verified")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  organizationId  String?          @map("organization_id") @db.Uuid
+  loginAttempts   Int              @default(0) @map("login_attempts")
+  lockedUntil     DateTime?        @map("locked_until") @db.Timestamptz(6)
+  isLocked        Boolean          @default(false) @map("is_locked")
+  loginAttemptRecords login_attempts[] @relation("loginAttemptRecords")
+  refreshTokens   RefreshToken[]
+  roles           UserRole[]
+  organization    organizations?   @relation(fields: [organizationId], references: [id], onUpdate: NoAction)
 
-  roles         UserRole[] // 1:N relationship with UserRole
-  refreshTokens RefreshToken[] // 1:N relationship with RefreshToken
-
+  @@index([email, organizationId], map: "idx_users_email_organization")
+  @@index([isLocked, lockedUntil], map: "idx_users_lock_status")
+  @@index([organizationId], map: "idx_users_organization_id")
   @@map("users")
 }
 
 model UserRole {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  name        String // Role name, e.g., "admin", "user"
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  name        String   @db.VarChar
+  description String?  @db.VarChar
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, name]) // Ensure a user cannot have the same role multiple times
-  @@index([userId])
+  @@unique([userId, name], map: "idx_user_roles_user_name")
+  @@index([userId], map: "idx_user_roles_user_id")
   @@map("user_roles")
 }
 
 model RefreshToken {
-  id            String    @id @default(uuid())
-  userId        String    @map("user_id")
-  jti           String    @unique
-  tokenHash     String    @map("token_hash")
-  deviceId      String?   @map("device_id")
-  ipAddress     String?   @map("ip_address")
-  userAgent     String?   @map("user_agent")
-  expiresAt     DateTime  @map("expires_at")
-  revokedAt     DateTime? @map("revoked_at")
-  revokedReason String?   @map("revoked_reason")
-  replacedByJti String?   @map("replaced_by_jti")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String         @map("user_id") @db.Uuid
+  jti                  String         @unique @db.VarChar
+  tokenHash            String         @map("token_hash") @db.VarChar
+  deviceId             String?        @map("device_id") @db.VarChar
+  ipAddress            String?        @map("ip_address") @db.Inet
+  userAgent            String?        @map("user_agent") @db.VarChar
+  expiresAt            DateTime       @map("expires_at") @db.Timestamptz(6)
+  revokedAt            DateTime?      @map("revoked_at") @db.Timestamptz(6)
+  revokedReason        String?        @map("revoked_reason") @db.VarChar
+  replacedByJti        String?        @map("replaced_by_jti") @db.VarChar
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  refresh_tokens       RefreshToken?  @relation("refresh_tokensTorefresh_tokens", fields: [replacedByJti], references: [jti], onDelete: NoAction, onUpdate: NoAction, map: "fk_refresh_replaced_by")
+  other_refresh_tokens RefreshToken[] @relation("refresh_tokensTorefresh_tokens")
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, expiresAt])
+  @@index([replacedByJti], map: "idx_refresh_replaced_by")
+  @@index([tokenHash], map: "idx_refresh_token_hash")
+  @@index([expiresAt], map: "idx_refresh_tokens_expires_at")
+  @@index([revokedAt], map: "idx_refresh_tokens_revoked_at")
+  @@index([userId, expiresAt], map: "idx_refresh_user_expires")
+  @@index([userId, revokedAt], map: "idx_refresh_user_revoked")
   @@map("refresh_tokens")
+}
+
+model flyway_schema_history {
+  installed_rank Int      @id(map: "flyway_schema_history_pk")
+  version        String?  @db.VarChar(50)
+  description    String   @db.VarChar(200)
+  type           String   @db.VarChar(20)
+  script         String   @db.VarChar(1000)
+  checksum       Int?
+  installed_by   String   @db.VarChar(100)
+  installed_on   DateTime @default(now()) @db.Timestamp(6)
+  execution_time Int
+  success        Boolean
+
+  @@index([success], map: "flyway_schema_history_s_idx")
+}
+
+model login_attempts {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String   @db.VarChar(255)
+  userId        String?  @map("user_id") @db.Uuid
+  ipAddress     String   @map("ip_address") @db.VarChar(45)
+  userAgent     String?  @map("user_agent")
+  success       Boolean
+  failureReason String?  @map("failure_reason") @db.VarChar(255)
+  timestamp     DateTime @default(now()) @db.Timestamptz(6)
+  user          User?    @relation("loginAttemptRecords", fields: [userId], references: [id], onUpdate: NoAction)
+
+  @@index([email, timestamp], map: "idx_login_attempts_email_timestamp")
+  @@index([ipAddress, timestamp], map: "idx_login_attempts_ip_timestamp")
+  @@index([timestamp], map: "idx_login_attempts_timestamp")
+  @@index([userId, timestamp], map: "idx_login_attempts_user_timestamp")
+  @@map("login_attempts")
+}
+
+model organizations {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(255)
+  slug      String   @unique @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  users     User[]
+
+  @@index([isActive], map: "idx_organizations_is_active")
+  @@map("organizations")
 }
