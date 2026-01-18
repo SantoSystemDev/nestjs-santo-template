@@ -90,6 +90,7 @@ modules/
 ```
 
 **Regras**:
+
 - `domain/` não depende de infraestrutura ou framework
 - `application/` depende de `domain/`, mas não de `infra/` (usa interfaces)
 - `infra/` implementa interfaces de `domain/`
