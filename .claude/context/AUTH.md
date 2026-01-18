@@ -9,10 +9,10 @@
 - Garantir que a implementacao seja simples para o front-end consumir.
 - Implementar Swagger para documentacao automatica da API.
 - Gerenciar roles e permissoes de usuarios. Por enquanto, apenas roles basicas como 'SUPER_ADMIN' e 'USER'.
-  - 'SUPER_ADMIN' tem acesso total a todas as rotas.
+  - 'SUPER_ADMIN' tem acesso total a todas as rotas de todas as organizacoes.
   - 'SUPER_ADMIN' pode criar, editar e deletar outros usuarios e organizações.
   - Apenas eu vou ser 'SUPER_ADMIN' inicialmente.
-  - 'USER' tem acesso limitado a rotas especificas.
+  - 'USER' tem acesso limitado a rotas especificas da sua organizacao.
   - Qualquer outro usuario cadastrado sera 'USER' por padrao.
 - Implementar multi-tenancy (cada usuario pertence a uma organizacao).
   - Apenas 'SUPER_ADMIN' pode gerenciar organizacoes.
@@ -33,6 +33,8 @@
 - Implementar rate limiting para endpoints de autenticacao.
 - Garantir que todas as mensagens de erro sejam genericas para nao vazar informacoes sensiveis.
 - Remover dependencias desnecessarias ou não utilizadas para manter o projeto leve.
+- Garantir a LGPD e conformidade com a GDPR, se aplicavel.
+- Evitar vazamento de dados entre organizacoes.
 
 ### Perguntas:
 
