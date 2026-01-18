@@ -16,6 +16,7 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 ## 2) Contexto atual
 
 ### Implementado e precisando ser revisto/melhorado:
+
 - Signup básico (`POST /auth/signup`)
 - Login com email/senha (`POST /auth/login`) usando PasswordAuthGuard (Passport local)
 - JWT RS256 com access token retornado em JSON
@@ -26,6 +27,7 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 - Validation pipes globais
 
 ### Não implementado:
+
 - Refresh tokens (emissão, persistência, rotação, cleanup)
 - Logout seguro (invalidação de tokens)
 - Validação de email pós-cadastro
@@ -131,6 +133,7 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 ## 6) Restrições e premissas
 
 ### Premissas:
+
 - SMTP configurável via env vars (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`)
 - Nodemailer para envio de emails
 - Templates HTML simples e responsivos (sem customização inicial)
@@ -139,6 +142,7 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 - Ilimitados dispositivos simultâneos, mas limitado a 10 refresh tokens ativos/usuário
 
 ### Restrições:
+
 - Access token expira em 15min
 - Refresh token expira em 7 dias
 - Email de confirmação expira em 24h
@@ -168,7 +172,9 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 ### Endpoints:
 
 #### `POST /v1/auth/signup`
+
 **Input:**
+
 ```json
 {
   "email": "user@example.com",
@@ -177,24 +183,31 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
   "organizationId": "uuid" // opcional, obrigatório se não for `SUPER_ADMIN`
 }
 ```
+
 **Output (201):**
+
 ```json
 {
   "message": "User created. Please check your email to verify your account.",
   "userId": "uuid"
 }
 ```
+
 **Cookies:** Nenhum (usuário precisa validar email antes de fazer login)
 
 #### `POST /v1/auth/login`
+
 **Input:**
+
 ```json
 {
   "email": "user@example.com",
   "password": "SecureP@ss123"
 }
 ```
+
 **Output (200):**
+
 ```json
 {
   "accessToken": "jwt-access-token",
@@ -207,36 +220,47 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
   }
 }
 ```
+
 **Cookies:** `refreshToken` (httpOnly, secure, sameSite: strict, maxAge: 7 days)
 
 #### `POST /v1/auth/refresh`
+
 **Input:** Cookie `refreshToken`
 **Output (200):**
+
 ```json
 {
   "accessToken": "new-jwt-access-token"
 }
 ```
+
 **Cookies:** `refreshToken` (novo, rotacionado)
 
 #### `POST /v1/auth/logout`
+
 **Input:** Cookie `refreshToken`
 **Output (200):**
+
 ```json
 {
   "message": "Logged out successfully"
 }
 ```
+
 **Cookies:** Removidos
 
 #### `POST /v1/auth/verify-email`
+
 **Input:**
+
 ```json
 {
   "token": "email-verification-jwt"
 }
 ```
+
 **Output (200):**
+
 ```json
 {
   "message": "Email verified successfully. You can now log in."
@@ -244,13 +268,17 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 ```
 
 #### `POST /v1/auth/resend-verification`
+
 **Input:**
+
 ```json
 {
   "email": "user@example.com"
 }
 ```
+
 **Output (200):**
+
 ```json
 {
   "message": "Verification email sent. Please check your inbox."
@@ -258,13 +286,17 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 ```
 
 #### `POST /v1/auth/forgot-password`
+
 **Input:**
+
 ```json
 {
   "email": "user@example.com"
 }
 ```
+
 **Output (200):**
+
 ```json
 {
   "message": "If the email exists, a password reset link has been sent."
@@ -272,14 +304,18 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 ```
 
 #### `POST /v1/auth/reset-password`
+
 **Input:**
+
 ```json
 {
   "token": "password-reset-jwt",
   "newPassword": "NewSecureP@ss456"
 }
 ```
+
 **Output (200):**
+
 ```json
 {
   "message": "Password reset successfully. Please log in with your new password."
@@ -287,6 +323,7 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 ```
 
 ### Eventos internos (opcional para logging/auditoria):
+
 - `user.signup` (userId, email, timestamp)
 - `user.email_verified` (userId, timestamp)
 - `auth.login_success` (userId, ip, userAgent, timestamp)
@@ -299,6 +336,7 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 ### Modelos de dados (schema changes):
 
 #### `Organization` (nova tabela)
+
 ```
 id: uuid
 name: string
@@ -309,6 +347,7 @@ updatedAt: datetime
 ```
 
 #### `User` (adicionar campo)
+
 ```
 organizationId: uuid (nullable, FK para Organization) // null apenas para `SUPER_ADMIN`
 loginAttempts: int (default: 0)
@@ -317,6 +356,7 @@ isLocked: boolean (default: false) // true = conta bloqueada por tentativas falh
 ```
 
 #### `RefreshToken` (já existe, garantir campos)
+
 ```
 id: uuid
 userId: uuid (FK)
@@ -334,6 +374,7 @@ updatedAt: datetime
 ```
 
 #### `LoginAttempt` (nova tabela para auditoria)
+
 ```
 id: uuid
 email: string
@@ -346,6 +387,7 @@ timestamp: datetime
 ```
 
 ### Email Templates:
+
 - `email-verification.html`: link de confirmação
 - `password-reset.html`: link de recuperação
 - `account-locked.html`: notificação de bloqueio
@@ -354,6 +396,7 @@ timestamp: datetime
 ## 9) Dependências (internas/externas)
 
 ### Internas:
+
 - Módulo `user` (UserRepository, HashService, RoleEnum)
 - Shared utilities (crypto, validators)
 - Shared filters (exception handling)
@@ -362,6 +405,7 @@ timestamp: datetime
 - Pino logger
 
 ### Externas:
+
 - `nodemailer` (envio de emails)
 - `@nestjs/throttler` (rate limiting)
 - `@nestjs/schedule` (cron jobs para cleanup)
@@ -375,12 +419,14 @@ timestamp: datetime
 ## 10) Observabilidade
 
 ### Logs:
+
 - **Info:** signup sucesso, login sucesso, email enviado, logout, password reset sucesso, email verificado
 - **Warn:** tentativa de login falha, refresh token inválido, email não verificado, tentativa de acesso sem permissão
 - **Error:** falha ao enviar email, falha ao gerar token, falha ao salvar no banco
 - **Audit:** todas as tentativas de login (sucesso/falha) em tabela `LoginAttempt`
 
 ### Métricas:
+
 - Contador: `auth.signup.total`, `auth.login.success`, `auth.login.failed`, `auth.logout.total`
 - Contador: `auth.email_verification.sent`, `auth.email_verification.success`
 - Contador: `auth.password_reset.requested`, `auth.password_reset.success`
@@ -390,6 +436,7 @@ timestamp: datetime
 - Histogram: `auth.login.duration` (tempo de resposta)
 
 ### Alertas:
+
 - **Crítico:** Taxa de falhas de login > 50% em 5min (possível ataque)
 - **Crítico:** Falha ao enviar emails > 10 em 1min
 - **Warning:** Conta bloqueada (notificar `SUPER_ADMIN` se usuário específico for bloqueado repetidamente)
@@ -398,6 +445,7 @@ timestamp: datetime
 ## 11) Critérios de aceite
 
 ### Signup e Verificação de Email:
+
 - [ ] Usuário consegue criar conta com email, senha e nome completo
 - [ ] Sistema valida formato de email e força da senha
 - [ ] Sistema envia email de confirmação automaticamente após signup
@@ -407,6 +455,7 @@ timestamp: datetime
 - [ ] Usuário consegue reenviar email de confirmação (rate limit: 1/5min)
 
 ### Login e Refresh Token:
+
 - [ ] Usuário com email verificado consegue fazer login com email/senha
 - [ ] Sistema retorna access token (15min) e refresh token (7 dias) em cookies httpOnly
 - [ ] Usuário consegue usar refresh token para renovar access token
@@ -415,11 +464,13 @@ timestamp: datetime
 - [ ] Tentativa de usar refresh token revogado retorna 401
 
 ### Logout:
+
 - [ ] Usuário consegue fazer logout
 - [ ] Refresh token é invalidado após logout
 - [ ] Cookies são removidos
 
 ### Recuperação de Senha:
+
 - [ ] Usuário consegue solicitar recuperação de senha via email
 - [ ] Sistema envia email com link de recuperação (expira em 1h)
 - [ ] Link de recuperação funciona e permite definir nova senha
@@ -428,6 +479,7 @@ timestamp: datetime
 - [ ] Rate limit: 1 email de recuperação/5min por IP
 
 ### Bloqueio de Conta:
+
 - [ ] Conta é bloqueada após 5 tentativas falhas de login em 15min
 - [ ] Sistema envia email notificando bloqueio
 - [ ] Conta é desbloqueada automaticamente após 30min
@@ -435,17 +487,20 @@ timestamp: datetime
 - [ ] `SUPER_ADMIN` consegue desbloquear conta manualmente
 
 ### Multi-tenancy:
+
 - [ ] Usuário `USER` pertence a 1 organização
 - [ ] `USER` só acessa dados da própria organização
 - [ ] `SUPER_ADMIN` acessa dados de todas as organizações
 - [ ] Tentativa de `USER` acessar dados de outra organização retorna 403
 
 ### Roles e Permissões:
+
 - [ ] Nova conta recebe role `USER` por padrão
 - [ ] `SUPER_ADMIN` consegue gerenciar todas as organizações e usuários
 - [ ] Guards verificam role antes de permitir acesso a rotas protegidas
 
 ### Segurança:
+
 - [ ] Mensagens de erro são genéricas (não vazam se email existe)
 - [ ] Rate limiting ativo em endpoints de autenticação (5 req/min por IP)
 - [ ] Senhas são hasheadas com Argon2 + pepper
@@ -455,11 +510,13 @@ timestamp: datetime
 - [ ] Timestamps sempre em UTC
 
 ### Observabilidade:
+
 - [ ] Todas as tentativas de login são registradas em logs estruturados
 - [ ] Tabela `LoginAttempt` registra tentativas de login para auditoria
 - [ ] Métricas de autenticação são expostas (signup, login, logout, etc.)
 
 ### Cleanup e Manutenção:
+
 - [ ] Job cron roda diariamente (03:00 UTC) para remover refresh tokens expirados
 - [ ] Job cron remove tentativas de login antigas (> 60 dias)
 
@@ -468,6 +525,7 @@ timestamp: datetime
 ### Manual:
 
 #### Signup + Verificação de Email:
+
 - [ ] Criar conta via `POST /v1/auth/signup` com email válido
 - [ ] Verificar que email de confirmação foi recebido
 - [ ] Tentar login sem verificar email: deve retornar 401
@@ -475,6 +533,7 @@ timestamp: datetime
 - [ ] Tentar login novamente: deve funcionar
 
 #### Login + Refresh Token:
+
 - [ ] Fazer login via `POST /v1/auth/login`
 - [ ] Verificar que access token foi retornado e refresh token está em cookie httpOnly
 - [ ] Usar access token para acessar rota protegida
@@ -483,11 +542,13 @@ timestamp: datetime
 - [ ] Verificar que novo refresh token foi emitido
 
 #### Logout:
+
 - [ ] Fazer logout via `POST /v1/auth/logout`
 - [ ] Tentar usar refresh token antigo: deve retornar 401
 - [ ] Verificar que cookies foram removidos
 
 #### Recuperação de Senha:
+
 - [ ] Solicitar recuperação via `POST /v1/auth/forgot-password`
 - [ ] Verificar que email de recuperação foi recebido
 - [ ] Clicar no link e definir nova senha via `POST /v1/auth/reset-password`
@@ -495,12 +556,14 @@ timestamp: datetime
 - [ ] Tentar usar refresh token antigo: deve retornar 401 (todos invalidados)
 
 #### Bloqueio de Conta:
+
 - [ ] Fazer 5 tentativas de login com senha errada em < 15min
 - [ ] Verificar que conta foi bloqueada e email de notificação foi enviado
 - [ ] Tentar login com senha correta: deve retornar "Account locked"
 - [ ] Esperar 30min e tentar novamente: deve funcionar
 
 #### Multi-tenancy:
+
 - [ ] Criar 2 organizações
 - [ ] Criar usuário `USER` em cada organização
 - [ ] Fazer login com `USER` da org A
@@ -511,6 +574,7 @@ timestamp: datetime
 ### Automatizado:
 
 #### Testes Unitários:
+
 - [ ] AuthService: signup, login, refresh, logout, verify email, reset password
 - [ ] HashService: hash e verify com Argon2
 - [ ] JwtStrategy: validação de token
@@ -518,6 +582,7 @@ timestamp: datetime
 - [ ] Guards: JwtAuthGuard, PasswordAuthGuard, RolesGuard
 
 #### Testes E2E:
+
 - [ ] Signup flow completo (criação + verificação de email)
 - [ ] Login flow completo (login + refresh + logout)
 - [ ] Recuperação de senha flow completo
@@ -527,6 +592,7 @@ timestamp: datetime
 - [ ] Refresh token rotation: invalidar anterior ao gerar novo
 
 ### Critérios de sucesso:
+
 - [ ] 100% dos testes unitários passando
 - [ ] 100% dos testes E2E passando
 - [ ] Coverage >= 90% em módulos críticos (AuthService, guards, strategies)
@@ -539,40 +605,53 @@ timestamp: datetime
 ## 13) Perguntas em aberto / Assunções
 
 ### Q1: Qual serviço de email usar (SendGrid, AWS SES, SMTP local)?
+
 **A (confirmado):** SMTP configurável via env vars, implementação agnóstica usando Nodemailer. Permite usar qualquer provedor SMTP (SendGrid, AWS SES, Gmail, Mailgun, etc.) sem mudar código.
 
 ### Q2: 2FA deve ser obrigatório para `SUPER_ADMIN`?
+
 **A (confirmado):** Não implementar 2FA nesta versão. Fica para versão futura.
 
 ### Q3: Quantos dispositivos simultâneos são permitidos?
+
 **A (confirmado):** Ilimitado, mas com limite de 10 refresh tokens ativos por usuário. Cleanup automático dos mais antigos quando limite for atingido.
 
 ### Q4: Template de emails deve ser customizável?
+
 **A (confirmado):** Usar templates HTML simples e responsivos, sem customização inicial. Templates em `src/modules/auth/templates/`.
 
 ### Q5: Bloqueio de conta deve notificar usuário por email?
+
 **A (confirmado):** Sim, enviar email informando bloqueio e instruções de desbloqueio (aguardar 30min ou contatar suporte).
 
 ### Q6: Refresh token deve ser rotacionado mesmo se não expirou?
+
 **A (confirmado):** Sim, sempre rotacionar a cada uso para máxima segurança. Invalidar anterior e emitir novo.
 
 ### Q7: Como lidar com timezone em logs e tokens?
+
 **A (confirmado):** Usar UTC em todos os timestamps. Front-end faz conversão para timezone local do usuário.
 
 ### Q8: Como organizações são criadas?
+
 **A (confirmado):** Apenas `SUPER_ADMIN` pode criar organizações via endpoint `POST /v1/organizations` (fora do escopo deste PRD, mas necessário para multi-tenancy funcionar). Seed script cria `SUPER_ADMIN` inicial.
 
 ### Q9: `SUPER_ADMIN` deve pertencer a uma organização?
+
 **A (confirmado):** Não. Campo `organizationId` é `null` para `SUPER_ADMIN`, indicando acesso global.
 
 ### Q10: Como lidar com múltiplas tentativas de login simultâneas?
+
 **A (confirmado):** Contar todas as tentativas (mesmo de IPs diferentes) e bloquear se exceder 5 em 15min. Usar campo `loginAttempts` e `lockedUntil` no modelo User.
 
 ### Q11: Refresh token deve ser armazenado hasheado?
+
 **A (confirmado):** Sim, armazenar hash SHA256 do refresh token no campo `tokenHash`. Comparar hash ao validar.
 
 ### Q12: Como detectar roubo de refresh token?
+
 **A (confirmado):** Se refresh token revogado/substituído for usado novamente, invalidar TODOS os refresh tokens do usuário e forçar novo login (possível indicação de roubo).
 
 ### Q13: Como garantir que front-end consegue renovar access token automaticamente?
+
 **A (confirmado):** Front-end deve interceptar 401 (token expirado), chamar `POST /v1/auth/refresh` automaticamente, e retentar request original com novo access token. Refresh token em httpOnly cookie facilita esse fluxo.

@@ -436,6 +436,7 @@ ResetPasswordDto {
 Interface de repositório para gerenciar refresh tokens.
 
 **Métodos:**
+
 - **create**: recebe dados de criação (CreateRefreshTokenDto), retorna RefreshToken criado
 - **findByJti**: recebe JTI (string única), retorna RefreshToken correspondente ou null
 - **findActiveByUserId**: recebe userId, retorna lista de RefreshTokens ativos (não revogados, não expirados)
@@ -449,6 +450,7 @@ Interface de repositório para gerenciar refresh tokens.
 Interface de repositório para registrar e consultar tentativas de login.
 
 **Métodos:**
+
 - **create**: recebe dados de criação (CreateLoginAttemptDto), retorna LoginAttempt criado
 - **countRecentFailures**: recebe email e minutesAgo (número), retorna quantidade de falhas recentes
 - **deleteOlderThan**: recebe days (número), remove tentativas antigas, retorna quantidade removida
@@ -458,6 +460,7 @@ Interface de repositório para registrar e consultar tentativas de login.
 Interface de repositório para gerenciar organizações.
 
 **Métodos:**
+
 - **create**: recebe dados de criação (CreateOrganizationDto), retorna Organization criada
 - **findById**: recebe id (UUID), retorna Organization correspondente ou null
 - **findBySlug**: recebe slug (string), retorna Organization correspondente ou null
@@ -469,6 +472,7 @@ Interface de repositório para gerenciar organizações.
 Interface de serviço para envio de emails.
 
 **Métodos:**
+
 - **sendVerificationEmail**: recebe destinatário (email) e token (JWT), envia email de verificação
 - **sendPasswordResetEmail**: recebe destinatário (email) e token (JWT), envia email de recuperação
 - **sendAccountLockedEmail**: recebe destinatário (email) e unlockTime (Date), envia email de notificação de bloqueio
@@ -479,19 +483,24 @@ Interface de serviço para envio de emails.
 ### 5.3) DTOs de aplicação (novos)
 
 #### VerifyEmailDto
+
 - **token**: string (obrigatório, JWT de verificação)
 
 #### ResendVerificationDto
+
 - **email**: string (obrigatório, email válido)
 
 #### ForgotPasswordDto
+
 - **email**: string (obrigatório, email válido)
 
 #### ResetPasswordDto
+
 - **token**: string (obrigatório, JWT de recuperação)
 - **newPassword**: string (obrigatório, mesmos critérios do signup: mín 8 chars, 1 letra, 1 número, 1 especial)
 
 #### CreateRefreshTokenDto
+
 - **userId**: UUID (obrigatório)
 - **jti**: string (obrigatório, identificador único)
 - **tokenHash**: string (obrigatório, SHA256)
@@ -501,6 +510,7 @@ Interface de serviço para envio de emails.
 - **expiresAt**: datetime (obrigatório)
 
 #### CreateLoginAttemptDto
+
 - **email**: string (obrigatório)
 - **userId**: UUID (opcional, null se email não existir)
 - **ipAddress**: string (obrigatório)
@@ -509,11 +519,13 @@ Interface de serviço para envio de emails.
 - **failureReason**: string (opcional, só presente se success=false)
 
 #### CreateOrganizationDto
+
 - **name**: string (obrigatório, mín 2 chars)
 - **slug**: string (opcional, gerado automaticamente se não fornecido)
 - **isActive**: boolean (opcional, default: true)
 
 #### UpdateOrganizationDto
+
 - **name**: string (opcional)
 - **slug**: string (opcional)
 - **isActive**: boolean (opcional)
@@ -523,9 +535,11 @@ Interface de serviço para envio de emails.
 ### 5.4) Modelos de domínio (novos/alterados)
 
 #### OrganizationModel (NOVO)
+
 Representa uma organização no domínio.
 
 **Campos:**
+
 - **id**: UUID
 - **name**: string
 - **slug**: string (único, lowercase com hífens)
@@ -536,9 +550,11 @@ Representa uma organização no domínio.
 **Factory method**: `OrganizationModel.create()` - valida name, gera slug automaticamente
 
 #### RefreshTokenModel (NOVO)
+
 Representa um refresh token no domínio.
 
 **Campos:**
+
 - **id**: UUID
 - **userId**: UUID (FK para User)
 - **jti**: string (identificador único do token)
@@ -556,9 +572,11 @@ Representa um refresh token no domínio.
 **Factory method**: `RefreshTokenModel.create()` - valida jti e expiresAt
 
 #### LoginAttemptModel (NOVO)
+
 Representa uma tentativa de login para auditoria.
 
 **Campos:**
+
 - **id**: UUID
 - **email**: string
 - **userId**: UUID (opcional, null se email não existir)
@@ -571,25 +589,31 @@ Representa uma tentativa de login para auditoria.
 **Factory method**: `LoginAttemptModel.create()` - valida email e ipAddress
 
 #### JwtPayloadModel (ALTERAR)
+
 Payload do JWT access token.
 
 **Campos:**
+
 - **userId**: UUID
 - **email**: string
 - **roles**: array de RoleEnum
 - **organizationId**: UUID (opcional, null para SUPER_ADMIN) ← **ADICIONAR**
 
 #### EmailVerificationPayload (NOVO)
+
 Payload do JWT para verificação de email.
 
 **Campos:**
+
 - **userId**: UUID
 - **type**: literal string 'email_verification'
 
 #### PasswordResetPayload (NOVO)
+
 Payload do JWT para recuperação de senha.
 
 **Campos:**
+
 - **userId**: UUID
 - **type**: literal string 'password_reset'
 
@@ -598,17 +622,23 @@ Payload do JWT para recuperação de senha.
 ### 5.5) Enums
 
 #### RoleEnum (ALTERAR)
+
 Valores possíveis:
+
 - **USER**: usuário comum, acesso limitado à própria organização
 - **SUPER_ADMIN**: administrador global, acesso a todas as organizações ← **ADICIONAR**
 
 #### TokenTypeEnum (NOVO)
+
 Valores possíveis:
+
 - **EMAIL_VERIFICATION**: token para verificação de email
 - **PASSWORD_RESET**: token para recuperação de senha
 
 #### RevokedReasonEnum (NOVO)
+
 Motivos de revogação de refresh token. Valores possíveis:
+
 - **USER_LOGOUT**: usuário fez logout
 - **TOKEN_ROTATION**: token foi rotacionado (substituído por novo)
 - **PASSWORD_RESET**: senha foi alterada
@@ -616,7 +646,9 @@ Motivos de revogação de refresh token. Valores possíveis:
 - **EXPIRED**: token expirado
 
 #### LoginFailureReasonEnum (NOVO)
+
 Motivos de falha de login. Valores possíveis:
+
 - **INVALID_PASSWORD**: senha incorreta
 - **EMAIL_NOT_VERIFIED**: email não verificado
 - **ACCOUNT_LOCKED**: conta bloqueada por tentativas falhas
@@ -628,25 +660,33 @@ Motivos de falha de login. Valores possíveis:
 ### 5.6) Contratos de Templates HTML
 
 #### email-verification.html
+
 Variáveis esperadas:
+
 - **{{name}}**: nome completo do usuário (string)
 - **{{verificationLink}}**: link completo com token JWT (string, ex: https://app.com/verify-email?token=...)
 - **{{expirationHours}}**: horas até expiração (número, padrão: 24)
 
 #### password-reset.html
+
 Variáveis esperadas:
+
 - **{{name}}**: nome completo do usuário (string)
 - **{{resetLink}}**: link completo com token JWT (string, ex: https://app.com/reset-password?token=...)
 - **{{expirationMinutes}}**: minutos até expiração (número, padrão: 60)
 
 #### account-locked.html
+
 Variáveis esperadas:
+
 - **{{name}}**: nome completo do usuário (string)
 - **{{unlockTime}}**: timestamp de desbloqueio automático em formato legível (string, ex: "18/01/2024 às 15:30 UTC")
 - **{{supportEmail}}**: email de suporte (string, configurável via env)
 
 #### password-changed.html
+
 Variáveis esperadas:
+
 - **{{name}}**: nome completo do usuário (string)
 - **{{changeTime}}**: timestamp da alteração em formato legível (string, ex: "18/01/2024 às 14:00 UTC")
 - **{{supportEmail}}**: email de suporte se alteração não foi autorizada (string)
@@ -676,14 +716,14 @@ Variáveis esperadas:
 
 **Responsabilidades (funções/métodos):**
 
-- **V2__add_organizations.sql**: criar tabela
+- **V2\_\_add_organizations.sql**: criar tabela
   `organizations` com campos (id, name, slug, is_active, created_at, updated_at), UNIQUE constraint em `slug`, INDEX em
   `is_active`
-- **V3__add_user_lock_fields.sql**: adicionar colunas `organization_id`, `login_attempts`, `locked_until`,
+- **V3\_\_add_user_lock_fields.sql**: adicionar colunas `organization_id`, `login_attempts`, `locked_until`,
   `is_locked` em `users`, FK para `organizations`, índices
-- **V4__add_login_attempts.sql**: criar tabela
+- **V4\_\_add_login_attempts.sql**: criar tabela
   `login_attempts` com campos (id, email, user_id, ip_address, user_agent, success, failure_reason, timestamp), índices
-- **V5__add_refresh_token_indexes.sql**: adicionar índices em `refresh_tokens.revoked_at` e `refresh_tokens.expires_at`
+- **V5\_\_add_refresh_token_indexes.sql**: adicionar índices em `refresh_tokens.revoked_at` e `refresh_tokens.expires_at`
 
 **Arquitetura (impacto/restrição):**
 Flyway é source of truth para schema (CLAUDE.md seção "Database Management"). Não usar `prisma migrate`.
@@ -1307,6 +1347,7 @@ make test            # Testes unitários do AuthService.forgotPassword() e reset
   - Retornar 200 com mensagem
 
 **Endpoint adicional**:
+
 - `POST /v1/auth/admin/unlock-account/:userId` (restrito a SUPER_ADMIN)
 
 **Arquitetura (impacto/restrição):**
@@ -1368,6 +1409,7 @@ make e2e             # Testes E2E dos novos endpoints
 - **OrganizationService**: orquestrar chamadas ao OrganizationRepository, validar slug único, normalizar slug (lowercase + hífens)
 
 **Endpoints**:
+
 - `POST /v1/organizations` (restrito a SUPER_ADMIN)
 - `GET /v1/organizations` (restrito a SUPER_ADMIN)
 - `GET /v1/organizations/:id` (restrito a SUPER_ADMIN)
@@ -1799,7 +1841,7 @@ make start           # Iniciar aplicação
 **Probabilidade:** Baixa
 **Mitigação:** Flyway gerencia transações automaticamente. Em caso de falha: rodar
 `make db-info` para verificar status e última migration aplicada, corrigir SQL da migration com erro, retentar
-`make db-migrate`. NUNCA editar migration já aplicada com sucesso (criar nova migration de correção V*__*.sql).
+`make db-migrate`. NUNCA editar migration já aplicada com sucesso (criar nova migration de correção V*\_\_*.sql).
 
 ---
 
@@ -1808,18 +1850,22 @@ make start           # Iniciar aplicação
 Para evitar vazamento de informações, usar mensagens genéricas conforme exemplos:
 
 **Login/Credenciais:**
+
 - ❌ "Email not found" ou "Invalid password"
 - ✅ "Invalid credentials"
 
 **Bloqueio de conta:**
+
 - ❌ "Account locked until 2024-01-18 15:30:00"
 - ✅ "Account temporarily locked. Please try again later or contact support."
 
 **Signup/Email:**
+
 - ❌ "Email already exists"
 - ✅ "Unable to complete signup. Please contact support if the issue persists."
 
 **Recuperação de senha:**
+
 - ❌ "Email not found"
 - ✅ "If the email exists, a password reset link has been sent."
 

@@ -39,25 +39,33 @@
 ### Perguntas:
 
 1. **Q**: Qual serviço de email usar (SendGrid, AWS SES, SMTP local)?
-  - Pode assumir SMTP configurável via env vars, implementação agnóstica (nodemailer)
+
+- Pode assumir SMTP configurável via env vars, implementação agnóstica (nodemailer)
 
 2. **Q**: 2FA deve ser obrigatório para SUPER_ADMIN?
-  - Por enquanto não vamos implementar nessa versão. Não se faz necessário agora.
+
+- Por enquanto não vamos implementar nessa versão. Não se faz necessário agora.
 
 3. **Q**: Quantos dispositivos simultâneos são permitidos?
-  - Ilimitado, mas com limite de 10 refresh tokens ativos por usuário (cleanup automático dos mais antigos)
+
+- Ilimitado, mas com limite de 10 refresh tokens ativos por usuário (cleanup automático dos mais antigos)
 
 4. **Q**: Template de emails deve ser customizável?
-  - Usar templates HTML simples e responsivos, sem customização inicial
+
+- Usar templates HTML simples e responsivos, sem customização inicial
 
 5. **Q**: Bloqueio de conta deve notificar usuário por email?
-  - Sim, enviar email informando bloqueio e como desbloquear (aguardar 30min ou contatar suporte)
+
+- Sim, enviar email informando bloqueio e como desbloquear (aguardar 30min ou contatar suporte)
 
 6. **Q**: Refresh token deve ser rotacionado mesmo se não expirou?
-  - Sim, sempre rotacionar a cada uso para máxima segurança (invalidar anterior)
+
+- Sim, sempre rotacionar a cada uso para máxima segurança (invalidar anterior)
 
 7. **Q**: Backup codes do 2FA devem ser armazenados hasheados?
-  - Por enquanto não vamos implementar 2FA nessa versão. Não se faz necessário agora.
+
+- Por enquanto não vamos implementar 2FA nessa versão. Não se faz necessário agora.
 
 8. **Q**: Como lidar com timezone em logs e tokens?
-  - Usar UTC em todos os timestamps, front-end faz conversão para timezone local
+
+- Usar UTC em todos os timestamps, front-end faz conversão para timezone local
