@@ -431,158 +431,225 @@ ResetPasswordDto {
 
 ### 5.2) Interfaces de domínio (ports)
 
-#### `RefreshTokenRepositoryPort` (NOVO)
+#### RefreshTokenRepositoryPort (NOVO)
 
-```
-interface RefreshTokenRepositoryPort {
-  create(data: CreateRefreshTokenDto): Promise<RefreshToken>
-  findByJti(jti: string): Promise<RefreshToken | null>
-  findActiveByUserId(userId: string): Promise<RefreshToken[]>
-  revoke(jti: string, reason: string, replacedByJti?: string): Promise<void>
-  revokeAllByUserId(userId: string, reason: string): Promise<void>
-  removeOldest(userId: string, limit: number): Promise<void>
-  deleteExpired(): Promise<number>
-}
-```
+Interface de repositório para gerenciar refresh tokens.
 
-#### `LoginAttemptRepositoryPort` (NOVO)
+**Métodos:**
+- **create**: recebe dados de criação (CreateRefreshTokenDto), retorna RefreshToken criado
+- **findByJti**: recebe JTI (string única), retorna RefreshToken correspondente ou null
+- **findActiveByUserId**: recebe userId, retorna lista de RefreshTokens ativos (não revogados, não expirados)
+- **revoke**: recebe JTI, reason e replacedByJti (opcional), marca token como revogado
+- **revokeAllByUserId**: recebe userId e reason, revoga todos os refresh tokens do usuário
+- **removeOldest**: recebe userId e limite (número), remove os refresh tokens mais antigos quando exceder limite
+- **deleteExpired**: remove todos os refresh tokens expirados, retorna quantidade removida (número)
 
-```
-interface LoginAttemptRepositoryPort {
-  create(data: CreateLoginAttemptDto): Promise<LoginAttempt>
-  countRecentFailures(email: string, minutesAgo: number): Promise<number>
-  deleteOlderThan(days: number): Promise<number>
-}
-```
+#### LoginAttemptRepositoryPort (NOVO)
 
-#### `OrganizationRepositoryPort` (NOVO)
+Interface de repositório para registrar e consultar tentativas de login.
 
-```
-interface OrganizationRepositoryPort {
-  create(data: CreateOrganizationDto): Promise<Organization>
-  findById(id: string): Promise<Organization | null>
-  findBySlug(slug: string): Promise<Organization | null>
-  findAll(filters?: OrganizationFilters): Promise<Organization[]>
-  update(id: string, data: UpdateOrganizationDto): Promise<Organization>
-}
-```
+**Métodos:**
+- **create**: recebe dados de criação (CreateLoginAttemptDto), retorna LoginAttempt criado
+- **countRecentFailures**: recebe email e minutesAgo (número), retorna quantidade de falhas recentes
+- **deleteOlderThan**: recebe days (número), remove tentativas antigas, retorna quantidade removida
 
-#### `EmailServicePort` (NOVO)
+#### OrganizationRepositoryPort (NOVO)
 
-```
-interface EmailServicePort {
-  sendVerificationEmail(to: string, token: string): Promise<void>
-  sendPasswordResetEmail(to: string, token: string): Promise<void>
-  sendAccountLockedEmail(to: string, unlockTime: Date): Promise<void>
-  sendPasswordChangedEmail(to: string): Promise<void>
-}
-```
+Interface de repositório para gerenciar organizações.
+
+**Métodos:**
+- **create**: recebe dados de criação (CreateOrganizationDto), retorna Organization criada
+- **findById**: recebe id (UUID), retorna Organization correspondente ou null
+- **findBySlug**: recebe slug (string), retorna Organization correspondente ou null
+- **findAll**: recebe filtros opcionais (OrganizationFilters), retorna lista de Organizations
+- **update**: recebe id e dados de atualização (UpdateOrganizationDto), retorna Organization atualizada
+
+#### EmailServicePort (NOVO)
+
+Interface de serviço para envio de emails.
+
+**Métodos:**
+- **sendVerificationEmail**: recebe destinatário (email) e token (JWT), envia email de verificação
+- **sendPasswordResetEmail**: recebe destinatário (email) e token (JWT), envia email de recuperação
+- **sendAccountLockedEmail**: recebe destinatário (email) e unlockTime (Date), envia email de notificação de bloqueio
+- **sendPasswordChangedEmail**: recebe destinatário (email), envia email de confirmação de alteração de senha
 
 ---
 
 ### 5.3) DTOs de aplicação (novos)
 
-```
-VerifyEmailDto { token: string }
-ResendVerificationDto { email: string }
-ForgotPasswordDto { email: string }
-ResetPasswordDto { token: string; newPassword: string }
-CreateRefreshTokenDto { userId, jti, tokenHash, deviceId?, ipAddress?, userAgent?, expiresAt }
-CreateLoginAttemptDto { email, userId?, ipAddress, userAgent?, success, failureReason? }
-CreateOrganizationDto { name, slug?, isActive? }
-UpdateOrganizationDto { name?, slug?, isActive? }
-```
+#### VerifyEmailDto
+- **token**: string (obrigatório, JWT de verificação)
+
+#### ResendVerificationDto
+- **email**: string (obrigatório, email válido)
+
+#### ForgotPasswordDto
+- **email**: string (obrigatório, email válido)
+
+#### ResetPasswordDto
+- **token**: string (obrigatório, JWT de recuperação)
+- **newPassword**: string (obrigatório, mesmos critérios do signup: mín 8 chars, 1 letra, 1 número, 1 especial)
+
+#### CreateRefreshTokenDto
+- **userId**: UUID (obrigatório)
+- **jti**: string (obrigatório, identificador único)
+- **tokenHash**: string (obrigatório, SHA256)
+- **deviceId**: string (opcional)
+- **ipAddress**: string (opcional)
+- **userAgent**: string (opcional)
+- **expiresAt**: datetime (obrigatório)
+
+#### CreateLoginAttemptDto
+- **email**: string (obrigatório)
+- **userId**: UUID (opcional, null se email não existir)
+- **ipAddress**: string (obrigatório)
+- **userAgent**: string (opcional)
+- **success**: boolean (obrigatório)
+- **failureReason**: string (opcional, só presente se success=false)
+
+#### CreateOrganizationDto
+- **name**: string (obrigatório, mín 2 chars)
+- **slug**: string (opcional, gerado automaticamente se não fornecido)
+- **isActive**: boolean (opcional, default: true)
+
+#### UpdateOrganizationDto
+- **name**: string (opcional)
+- **slug**: string (opcional)
+- **isActive**: boolean (opcional)
 
 ---
 
 ### 5.4) Modelos de domínio (novos/alterados)
 
-```
-OrganizationModel {
-  id: string
-  name: string
-  slug: string
-  isActive: boolean
-  createdAt: Date
-  updatedAt: Date
-}
+#### OrganizationModel (NOVO)
+Representa uma organização no domínio.
 
-RefreshTokenModel {
-  id: string
-  userId: string
-  jti: string
-  tokenHash: string
-  deviceId?: string
-  ipAddress?: string
-  userAgent?: string
-  expiresAt: Date
-  revokedAt?: Date
-  revokedReason?: string
-  replacedByJti?: string
-  createdAt: Date
-  updatedAt: Date
-}
+**Campos:**
+- **id**: UUID
+- **name**: string
+- **slug**: string (único, lowercase com hífens)
+- **isActive**: boolean
+- **createdAt**: datetime
+- **updatedAt**: datetime
 
-LoginAttemptModel {
-  id: string
-  email: string
-  userId?: string
-  ipAddress: string
-  userAgent?: string
-  success: boolean
-  failureReason?: string
-  timestamp: Date
-}
+**Factory method**: `OrganizationModel.create()` - valida name, gera slug automaticamente
 
-JwtPayloadModel (ALTERAR) {
-  userId: string
-  email: string
-  roles: RoleEnum[]
-  organizationId?: string // adicionar
-}
+#### RefreshTokenModel (NOVO)
+Representa um refresh token no domínio.
 
-EmailVerificationPayload {
-  userId: string
-  type: 'email_verification'
-}
+**Campos:**
+- **id**: UUID
+- **userId**: UUID (FK para User)
+- **jti**: string (identificador único do token)
+- **tokenHash**: string (SHA256)
+- **deviceId**: string (opcional)
+- **ipAddress**: string (opcional)
+- **userAgent**: string (opcional)
+- **expiresAt**: datetime
+- **revokedAt**: datetime (opcional)
+- **revokedReason**: string (opcional)
+- **replacedByJti**: string (opcional, JTI do token que substituiu este)
+- **createdAt**: datetime
+- **updatedAt**: datetime
 
-PasswordResetPayload {
-  userId: string
-  type: 'password_reset'
-}
-```
+**Factory method**: `RefreshTokenModel.create()` - valida jti e expiresAt
+
+#### LoginAttemptModel (NOVO)
+Representa uma tentativa de login para auditoria.
+
+**Campos:**
+- **id**: UUID
+- **email**: string
+- **userId**: UUID (opcional, null se email não existir)
+- **ipAddress**: string
+- **userAgent**: string (opcional)
+- **success**: boolean
+- **failureReason**: string (opcional)
+- **timestamp**: datetime
+
+**Factory method**: `LoginAttemptModel.create()` - valida email e ipAddress
+
+#### JwtPayloadModel (ALTERAR)
+Payload do JWT access token.
+
+**Campos:**
+- **userId**: UUID
+- **email**: string
+- **roles**: array de RoleEnum
+- **organizationId**: UUID (opcional, null para SUPER_ADMIN) ← **ADICIONAR**
+
+#### EmailVerificationPayload (NOVO)
+Payload do JWT para verificação de email.
+
+**Campos:**
+- **userId**: UUID
+- **type**: literal string 'email_verification'
+
+#### PasswordResetPayload (NOVO)
+Payload do JWT para recuperação de senha.
+
+**Campos:**
+- **userId**: UUID
+- **type**: literal string 'password_reset'
 
 ---
 
 ### 5.5) Enums
 
-```
-RoleEnum (ALTERAR) {
-  USER = 'USER'
-  SUPER_ADMIN = 'SUPER_ADMIN' // adicionar
-}
+#### RoleEnum (ALTERAR)
+Valores possíveis:
+- **USER**: usuário comum, acesso limitado à própria organização
+- **SUPER_ADMIN**: administrador global, acesso a todas as organizações ← **ADICIONAR**
 
-TokenTypeEnum {
-  EMAIL_VERIFICATION = 'email_verification'
-  PASSWORD_RESET = 'password_reset'
-}
+#### TokenTypeEnum (NOVO)
+Valores possíveis:
+- **EMAIL_VERIFICATION**: token para verificação de email
+- **PASSWORD_RESET**: token para recuperação de senha
 
-RevokedReasonEnum {
-  USER_LOGOUT = 'user_logout'
-  TOKEN_ROTATION = 'token_rotation'
-  PASSWORD_RESET = 'password_reset'
-  TOKEN_REUSE_DETECTED = 'token_reuse_detected'
-  EXPIRED = 'expired'
-}
+#### RevokedReasonEnum (NOVO)
+Motivos de revogação de refresh token. Valores possíveis:
+- **USER_LOGOUT**: usuário fez logout
+- **TOKEN_ROTATION**: token foi rotacionado (substituído por novo)
+- **PASSWORD_RESET**: senha foi alterada
+- **TOKEN_REUSE_DETECTED**: tentativa de reutilizar token revogado (possível roubo)
+- **EXPIRED**: token expirado
 
-LoginFailureReasonEnum {
-  INVALID_PASSWORD = 'invalid_password'
-  EMAIL_NOT_VERIFIED = 'email_not_verified'
-  ACCOUNT_LOCKED = 'account_locked'
-  ACCOUNT_INACTIVE = 'account_inactive'
-  EMAIL_NOT_FOUND = 'email_not_found'
-}
-```
+#### LoginFailureReasonEnum (NOVO)
+Motivos de falha de login. Valores possíveis:
+- **INVALID_PASSWORD**: senha incorreta
+- **EMAIL_NOT_VERIFIED**: email não verificado
+- **ACCOUNT_LOCKED**: conta bloqueada por tentativas falhas
+- **ACCOUNT_INACTIVE**: conta desativada administrativamente
+- **EMAIL_NOT_FOUND**: email não encontrado no sistema
+
+---
+
+### 5.6) Contratos de Templates HTML
+
+#### email-verification.html
+Variáveis esperadas:
+- **{{name}}**: nome completo do usuário (string)
+- **{{verificationLink}}**: link completo com token JWT (string, ex: https://app.com/verify-email?token=...)
+- **{{expirationHours}}**: horas até expiração (número, padrão: 24)
+
+#### password-reset.html
+Variáveis esperadas:
+- **{{name}}**: nome completo do usuário (string)
+- **{{resetLink}}**: link completo com token JWT (string, ex: https://app.com/reset-password?token=...)
+- **{{expirationMinutes}}**: minutos até expiração (número, padrão: 60)
+
+#### account-locked.html
+Variáveis esperadas:
+- **{{name}}**: nome completo do usuário (string)
+- **{{unlockTime}}**: timestamp de desbloqueio automático em formato legível (string, ex: "18/01/2024 às 15:30 UTC")
+- **{{supportEmail}}**: email de suporte (string, configurável via env)
+
+#### password-changed.html
+Variáveis esperadas:
+- **{{name}}**: nome completo do usuário (string)
+- **{{changeTime}}**: timestamp da alteração em formato legível (string, ex: "18/01/2024 às 14:00 UTC")
+- **{{supportEmail}}**: email de suporte se alteração não foi autorizada (string)
 
 ---
 
@@ -901,11 +968,18 @@ make test            # Testes unitários de validação dos DTOs
 
 **Responsabilidades (funções/métodos):**
 
-- **AuthService.signup()**: validar se `organizationId` existe (se fornecido), criar usuário com
-  `emailVerified: false`, gerar token de verificação JWT (`EmailVerificationPayload`, expiração 24h), enviar email via
-  `EmailService.sendVerificationEmail()`, retornar mensagem de sucesso com `userId`
-- **AuthService.generateEmailVerificationToken()**: gerar JWT com payload
-  `{ userId, type: 'email_verification' }`, expiração 24h
+- **AuthService.signup()**:
+  - Validar se organizationId existe (se fornecido)
+  - Criar usuário com emailVerified: false
+  - Gerar token de verificação JWT (EmailVerificationPayload, 24h)
+  - Enviar email de verificação via EmailService
+  - Retornar mensagem de sucesso com userId (não retornar access token)
+
+- **AuthService.generateEmailVerificationToken()**: gerar JWT com payload adequado, expiração 24h
+
+**Dependências:**
+
+- Passos 2, 3, 4, 5 devem estar completos (modelos, repositórios, EmailService, DTOs)
 
 **Arquitetura (impacto/restrição):**
 Application depende de interfaces de domain (CLAUDE.md seção "Architecture"). Injetar `EmailServicePort`,
@@ -951,12 +1025,23 @@ make test            # Testes unitários do AuthService.signup()
 
 **Responsabilidades (funções/métodos):**
 
-- **AuthService.verifyEmail()**: validar token JWT (
-  `EmailVerificationPayload`), verificar se usuário existe e ainda não verificou email, atualizar
-  `emailVerified: true`, retornar mensagem de sucesso
-- **AuthService.resendVerification()
-  **: buscar usuário por email, verificar se email já foi verificado (não reenviar se já verificado), aplicar rate limit (1 envio a cada 5min por email), gerar novo token de verificação, enviar email via
-  `EmailService.sendVerificationEmail()`, retornar mensagem de sucesso
+- **AuthService.verifyEmail()**:
+  - Validar token JWT (EmailVerificationPayload)
+  - Verificar se usuário existe e ainda não verificou email
+  - Atualizar emailVerified: true
+  - Retornar mensagem de sucesso
+
+- **AuthService.resendVerification()**:
+  - Buscar usuário por email
+  - Validar se email ainda não foi verificado
+  - Aplicar rate limit (1 envio a cada 5min por email)
+  - Gerar novo token de verificação
+  - Enviar email via EmailService
+  - Retornar mensagem de sucesso
+
+**Dependências:**
+
+- Passos 2, 3, 4, 5 devem estar completos
 
 **Arquitetura (impacto/restrição):**
 Application depende de interfaces de domain (CLAUDE.md seção "Architecture"). Injetar `UserRepositoryPort`,
@@ -1000,19 +1085,25 @@ make test            # Testes unitários do AuthService.verifyEmail() e resendVe
 
 **Responsabilidades (funções/métodos):**
 
-- **AuthService.login()**: verificar se usuário existe e `isActive`, verificar se `emailVerified: true`, verificar se
-  `isLocked: false` (se bloqueado e `lockedUntil < NOW()`, desbloquear automaticamente), verificar senha via
-  `HashService`, se senha inválida: incrementar `loginAttempts`, contar falhas recentes (15min via
-  `LoginAttemptRepository`), se >= 5 falhas: bloquear conta (`isLocked: true`,
-  `lockedUntil: NOW() + 30min`), enviar email de bloqueio, lançar erro, se senha válida: resetar
-  `loginAttempts: 0`, registrar tentativa de login bem-sucedida (
-  `LoginAttemptRepository`), gerar access token (15min), gerar refresh token (7 dias, armazenar hash SHA256 via
-  `RefreshTokenRepository`), limitar a 10 refresh tokens ativos (remover mais antigos), retornar access token em JSON e refresh token em httpOnly cookie
-- **AuthService.generateRefreshToken()
-  **: gerar JWT com JTI, expirar em 7 dias, retornar JWT plaintext (para cookie) e hash SHA256 (para armazenar)
-- **AuthService.checkAndLockAccount()
-  **: contar tentativas de login falhas em 15min, se >= 5: bloquear conta, enviar email
-- **AuthService.checkAndUnlockAccount()**: se `isLocked && lockedUntil < NOW()`: desbloquear conta
+- **AuthService.login()**:
+  - Validar credenciais e estado da conta (ativo, email verificado, não bloqueado)
+  - Verificar desbloqueio automático se lockedUntil expirou
+  - Aplicar regras de bloqueio por tentativas falhas (5 em 15min)
+  - Gerar e persistir par de tokens (access + refresh)
+  - Registrar tentativa de login (auditoria)
+  - Retornar access token em JSON e refresh token em cookie httpOnly
+
+- **AuthService.checkAndUnlockAccount()**: verificar se conta bloqueada pode ser desbloqueada automaticamente
+
+- **AuthService.checkAndLockAccount()**: contar tentativas recentes e bloquear conta se necessário, enviar email de bloqueio
+
+- **AuthService.generateRefreshToken()**: gerar JWT com JTI único, retornar plaintext (cookie) e hash SHA256 (BD)
+
+**Nota de implementação**: Usar transação Prisma ao incrementar loginAttempts + bloquear conta para evitar race condition.
+
+**Dependências:**
+
+- Passos 2, 3, 4, 5 devem estar completos
 
 **Arquitetura (impacto/restrição):**
 Application depende de interfaces de domain (CLAUDE.md seção "Architecture"). Injetar `RefreshTokenRepositoryPort`,
@@ -1059,15 +1150,25 @@ make test            # Testes unitários do AuthService.login()
 
 **Responsabilidades (funções/métodos):**
 
-- **AuthService.refreshToken()
-  **: extrair refresh token de cookie httpOnly, validar JWT (assinatura, expiração), extrair JTI, buscar refresh token via
-  `RefreshTokenRepository.findByJti()`, verificar se não está revogado, verificar se não expirou, gerar hash SHA256 e comparar com
-  `tokenHash`, se inválido/expirado/revogado: lançar 401, se token revogado/substituído for usado novamente: detectar possível roubo (invalidar TODOS os refresh tokens do usuário via
-  `RefreshTokenRepository.revokeAllByUserId()`), lançar 401, revogar refresh token atual (`revoke()`, motivo
-  `'token_rotation'`, armazenar
-  `replacedByJti`), gerar novo par access+refresh tokens, armazenar novo refresh token, retornar novo access token em JSON e novo refresh token em httpOnly cookie
-- **AuthService.logout()**: extrair refresh token de cookie, validar JWT (se válido), revogar via
-  `RefreshTokenRepository.revoke()` (motivo `'user_logout'`), limpar cookies httpOnly, retornar mensagem de sucesso
+- **AuthService.refreshToken()**:
+  - Extrair e validar refresh token de cookie httpOnly
+  - Buscar refresh token no BD via JTI
+  - Verificar se não está revogado ou expirado
+  - Detectar possível roubo de token (se token revogado for usado, invalidar todos os tokens do usuário)
+  - Revogar token atual e criar novo (rotação obrigatória)
+  - Retornar novo access token em JSON e novo refresh token em cookie httpOnly
+
+- **AuthService.logout()**:
+  - Extrair refresh token de cookie
+  - Revogar token via RefreshTokenRepository (motivo 'user_logout')
+  - Limpar cookies httpOnly
+  - Retornar mensagem de sucesso
+
+**Nota de implementação**: Usar transação Prisma ao revogar token antigo + criar novo para garantir atomicidade da rotação.
+
+**Dependências:**
+
+- Passos 2, 3, 4, 5 devem estar completos
 
 **Arquitetura (impacto/restrição):**
 Application depende de interfaces de domain (CLAUDE.md seção "Architecture"). Injetar `RefreshTokenRepositoryPort`.
@@ -1110,16 +1211,34 @@ make test            # Testes unitários do AuthService.refreshToken() e logout(
 
 **Responsabilidades (funções/métodos):**
 
-- **AuthService.forgotPassword()
-  **: buscar usuário por email, aplicar rate limit (1 envio a cada 5min por IP), se usuário não existir: retornar mensagem genérica (não vazar se email existe), gerar token de recuperação JWT (
-  `PasswordResetPayload`, expiração 1h), enviar email via
-  `EmailService.sendPasswordResetEmail()`, retornar mensagem genérica de sucesso
-- **AuthService.resetPassword()**: validar token JWT (
-  `PasswordResetPayload`), verificar se usuário existe, hashear nova senha via
-  `HashService`, atualizar senha no banco, invalidar TODOS os refresh tokens do usuário (
-  `RefreshTokenRepository.revokeAllByUserId()`, motivo `'password_reset'`), enviar email de confirmação via
-  `EmailService.sendPasswordChangedEmail()`, retornar mensagem de sucesso
-- **AuthService.generatePasswordResetToken()**: gerar JWT com payload `{ userId, type: 'password_reset' }`, expiração 1h
+- **AuthService.forgotPassword()**:
+  - Buscar usuário por email
+  - Aplicar rate limit (1 envio a cada 5min por IP)
+  - Retornar mensagem genérica (não vazar se email existe)
+  - Gerar token de recuperação JWT (PasswordResetPayload, 1h)
+  - Enviar email via EmailService
+
+- **AuthService.resetPassword()**:
+  - Validar token JWT (PasswordResetPayload)
+  - Hashear nova senha via HashService
+  - Atualizar senha no banco
+  - Invalidar todos os refresh tokens do usuário
+  - Enviar email de confirmação
+  - Retornar mensagem de sucesso
+
+- **AuthService.generatePasswordResetToken()**: gerar JWT com payload adequado, expiração 1h
+
+- **AuthService.unlockAccount()** (NOVO):
+  - Buscar usuário por ID
+  - Atualizar isLocked: false, lockedUntil: null, loginAttempts: 0
+  - Enviar email notificando desbloqueio
+  - Retornar mensagem de sucesso
+
+**Nota de implementação**: Usar transação Prisma ao atualizar senha + revogar todos os refresh tokens.
+
+**Dependências:**
+
+- Passos 2, 3, 4, 5 devem estar completos
 
 **Arquitetura (impacto/restrição):**
 Application depende de interfaces de domain (CLAUDE.md seção "Architecture"). Injetar `UserRepositoryPort`,
@@ -1181,6 +1300,14 @@ make test            # Testes unitários do AuthService.forgotPassword() e reset
   **: receber ForgotPasswordDto, delegar para AuthService.forgotPassword(), retornar 200 com mensagem
 - **AuthController.resetPassword()
   **: receber ResetPasswordDto, delegar para AuthService.resetPassword(), retornar 200 com mensagem
+- **AuthController.unlockAccount()** (NOVO):
+  - Receber userId via URL param
+  - Validar permissão SUPER_ADMIN via guard
+  - Delegar para AuthService.unlockAccount()
+  - Retornar 200 com mensagem
+
+**Endpoint adicional**:
+- `POST /v1/auth/admin/unlock-account/:userId` (restrito a SUPER_ADMIN)
 
 **Arquitetura (impacto/restrição):**
 Presentation depende de application (CLAUDE.md seção "Architecture"). Usar decorators NestJS (`@Post`, `@Body`, `@Res`,
@@ -1210,6 +1337,66 @@ make e2e             # Testes E2E dos novos endpoints
 - [ ] Respostas HTTP corretas (201, 200, 401, etc.)
 - [ ] Testes unitários passam
 - [ ] Testes E2E passam
+
+---
+
+### Passo 11.5 — CRUD básico de organizações (apenas SUPER_ADMIN)
+
+**Intenção:** Permitir que SUPER_ADMIN crie e gerencie organizações para multi-tenancy funcionar.
+
+**O que vai mudar (alto nível):**
+
+- Adicionar: módulo organization com controller, service, DTOs
+- Alterar: nada
+- Remover: nada
+
+**Escopo provável (arquivos/áreas):**
+
+- `src/modules/organization/` (nova estrutura hexagonal)
+- `src/modules/organization/presentation/controllers/organization.controller.ts`
+- `src/modules/organization/application/services/organization.service.ts`
+- `src/modules/organization/application/dtos/create-organization.dto.ts`
+- `src/modules/organization/application/dtos/update-organization.dto.ts`
+- `src/modules/organization/organization.module.ts`
+
+**Responsabilidades (funções/métodos):**
+
+- **OrganizationController.create()**: receber CreateOrganizationDto, validar permissão SUPER_ADMIN, delegar para service, retornar 201
+- **OrganizationController.update()**: receber UpdateOrganizationDto, validar permissão SUPER_ADMIN, delegar para service, retornar 200
+- **OrganizationController.findAll()**: validar permissão SUPER_ADMIN, listar todas as organizações, retornar 200
+- **OrganizationController.findById()**: validar permissão SUPER_ADMIN, buscar por ID, retornar 200
+- **OrganizationService**: orquestrar chamadas ao OrganizationRepository, validar slug único, normalizar slug (lowercase + hífens)
+
+**Endpoints**:
+- `POST /v1/organizations` (restrito a SUPER_ADMIN)
+- `GET /v1/organizations` (restrito a SUPER_ADMIN)
+- `GET /v1/organizations/:id` (restrito a SUPER_ADMIN)
+- `PATCH /v1/organizations/:id` (restrito a SUPER_ADMIN)
+
+**Arquitetura (impacto/restrição):**
+Seguir arquitetura hexagonal (CLAUDE.md). Criar módulo separado em `src/modules/organization/`.
+
+**Dados (impacto):**
+CRUD na tabela `organizations`.
+
+**Dependências:**
+
+- Passos 1, 2, 3 devem estar completos (Organization model, repository).
+
+**Evidência/Verificação:**
+
+```bash
+make test            # Testes unitários do OrganizationService
+make e2e             # Testes E2E de CRUD (apenas SUPER_ADMIN)
+```
+
+**Critério de pronto:**
+
+- [ ] Endpoints criados e protegidos por guard de SUPER_ADMIN
+- [ ] Slug gerado automaticamente e validado como único
+- [ ] USER não consegue acessar endpoints (403)
+- [ ] SUPER_ADMIN consegue criar, listar, atualizar organizações
+- [ ] Testes unitários e E2E passam
 
 ---
 
@@ -1616,17 +1803,43 @@ make start           # Iniciar aplicação
 
 ---
 
+### Boas práticas de segurança (mensagens genéricas)
+
+Para evitar vazamento de informações, usar mensagens genéricas conforme exemplos:
+
+**Login/Credenciais:**
+- ❌ "Email not found" ou "Invalid password"
+- ✅ "Invalid credentials"
+
+**Bloqueio de conta:**
+- ❌ "Account locked until 2024-01-18 15:30:00"
+- ✅ "Account temporarily locked. Please try again later or contact support."
+
+**Signup/Email:**
+- ❌ "Email already exists"
+- ✅ "Unable to complete signup. Please contact support if the issue persists."
+
+**Recuperação de senha:**
+- ❌ "Email not found"
+- ✅ "If the email exists, a password reset link has been sent."
+
+---
+
 ## 8) Definition of Done (checklist)
 
 - [x] Critérios de aceite do PRD cobertos no plano
 - [x] Passos pequenos e verificáveis, com evidência clara
-- [x] Sem snippets/pseudocódigo/implementação
+- [x] Sem snippets/pseudocódigo/implementação (seção 5 com descrições textuais)
 - [x] Arquitetura identificada e respeitada (seção 3 preenchida)
 - [x] Mudanças de dados descritas como modelagem (sem DDL/DML) quando aplicável (seção 4 preenchida)
-- [x] Contratos definidos somente quando necessário (seção 5 preenchida)
+- [x] Contratos definidos somente quando necessário (seção 5 preenchida, incluindo templates HTML)
+- [x] Transações Prisma documentadas nos passos críticos (8, 9, 10)
+- [x] Decisões sobre escopo resolvidas (CRUD organizações, desbloqueio manual)
 - [ ] Todas as migrations aplicadas com sucesso
 - [ ] Todos os testes unitários passando (>= 90% coverage em módulos críticos)
 - [ ] Todos os testes E2E passando
+- [ ] CRUD de organizações funcionando (SUPER_ADMIN)
+- [ ] Desbloqueio manual de conta funcionando (SUPER_ADMIN)
 - [ ] Swagger atualizado com novos endpoints
 - [ ] Variáveis de ambiente documentadas em `.env.example`
 - [ ] Email de confirmação/recuperação funcionando (SMTP configurado)
@@ -1642,6 +1855,14 @@ make start           # Iniciar aplicação
 
 ## 9) Perguntas em aberto / Assunções
 
+### Decisões tomadas (resolvidas para este plano):
+
+1. **CRUD de organizações**: DENTRO DO ESCOPO (Passo 11.5 adicionado) - apenas CREATE, READ, UPDATE (soft delete via `isActive`)
+2. **Desbloqueio manual**: DENTRO DO ESCOPO (adicionado ao Passo 10 e 11) - endpoint `POST /v1/auth/admin/unlock-account/:userId`
+3. **Lock distribuído para cleanup job**: FORA DO ESCOPO INICIAL - assumir job roda em instância única (flag de env `CLEANUP_JOB_ENABLED=true` em apenas 1 instância). Implementar lock distribuído (Redis) em versão futura se necessário.
+4. **Transações Prisma**: OBRIGATÓRIO nos Passos 8, 9, 10 (adicionadas notas de implementação para operações atômicas)
+5. **Front-end e renovação de tokens**: ASSUMIR que front-end intercepta 401 e chama `/refresh` automaticamente (documentar no README após implementação)
+
 ### Assunções:
 
 1. Usuários existentes no banco (se houver) serão migrados para organização "default" automaticamente.
@@ -1652,24 +1873,23 @@ make start           # Iniciar aplicação
 6. Templates HTML de emails são simples e responsivos, sem customização inicial.
 7. Cleanup job roda em servidor único (não distribuído). Se houver múltiplas instâncias, usar lock distribuído (Redis) ou rodar job em apenas 1 instância.
 
-### Perguntas em aberto:
+### Perguntas:
 
 1. **Q:** Front-end já está preparado para lidar com cookies httpOnly e renovação automática de tokens?
-   **A esperada:** Sim, front-end deve interceptar 401 e chamar `/refresh`.
+   **A confirmado:** Sim, front-end deve interceptar 401 e chamar `/refresh`.
 
 2. **Q:** Qual provedor SMTP usar em produção (SendGrid, AWS SES, Mailgun)?
-   **A esperada:** Configurável via env vars, implementação agnóstica.
+   **A confirmado:** Configurável via env vars, implementação agnóstica.
 
 3. **Q:** Como `SUPER_ADMIN` gerencia organizações (criar, editar, desativar)?
-   **A esperada:** Endpoint
+   **A confirmado:** Endpoint
    `POST /v1/organizations` (fora do escopo deste plano, mas necessário para multi-tenancy funcionar).
 
 4. **Q:** Desbloqueio manual por `SUPER_ADMIN` deve ser implementado agora ou em versão futura?
-   **A esperada:** Implementar agora (endpoint `POST /v1/admin/unlock-account/:userId`, restrito a `SUPER_ADMIN`).
+   **A confirmado:** Implementar agora (endpoint `POST /v1/admin/unlock-account/:userId`, restrito a `SUPER_ADMIN`).
 
 5. **Q:** Cleanup job deve rodar em todas as instâncias ou apenas 1 (lock distribuído)?
-   **A esperada:
-   ** Se aplicação é stateless com múltiplas instâncias, usar lock distribuído (Redis) ou garantir que job roda em apenas 1 instância (flag de ambiente).
+   **A confirmado:** Se aplicação é stateless com múltiplas instâncias, usar lock distribuído (Redis) ou garantir que job roda em apenas 1 instância (flag de ambiente).
 
 ---
 
