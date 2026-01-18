@@ -4,4 +4,5 @@ export class JwtPayloadModel {
   userId: string;
   email: string;
   roles: RoleEnum[];
+  organizationId?: string;
 }

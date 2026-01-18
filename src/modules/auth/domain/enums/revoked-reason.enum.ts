@@ -1,0 +1,9 @@
+export enum RevokedReasonEnum {
+  USER_LOGOUT = 'USER_LOGOUT',
+  TOKEN_ROTATION = 'TOKEN_ROTATION',
+  PASSWORD_RESET = 'PASSWORD_RESET',
+  TOKEN_REUSE_DETECTED = 'TOKEN_REUSE_DETECTED',
+  EXPIRED = 'EXPIRED',
+}
+
+export const REVOKED_REASON_VALUES = Object.values(RevokedReasonEnum);
