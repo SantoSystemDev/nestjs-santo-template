@@ -5,9 +5,28 @@
 
 ---
 
+## 📝 Melhorias Aplicadas (Revisão)
+
+Este plano foi revisado e as seguintes melhorias críticas foram aplicadas:
+
+1. ✅ **Bloqueio de Conta**: Corrigido para atualizar `isLocked: true` ao bloquear, além de `lockedUntil`
+2. ✅ **Login com Refresh Token**: Adicionada instrução explícita para atualizar endpoint `/login` existente
+3. ✅ **Conflito entre Passos**: Adicionado aviso no Passo 7 sobre modificação do
+   `password.strategy.ts` (também alterado no Passo 5)
+4. ✅ **Validação de Senha**: Adicionada validação de senha forte no
+   `SignupDto` (mín 8 chars, 1 letra, 1 número, 1 caractere especial)
+5. ✅ **Cookie Parser**: Adicionada configuração do `cookie-parser` no `main.ts`
+6. ✅ **Template HTML**: Adicionado exemplo de template HTML responsivo para emails
+7. ✅ **Estrutura Organization**: Expandida estrutura hexagonal do módulo `organization` com exemplos de código
+8. ✅ **Métodos UserRepository**: Adicionados métodos necessários (`lockAccount`, `unlockAccount`, `updateIsLocked`,
+   `resetLoginAttempts`)
+
+---
+
 ## 1) Objetivo do plano
 
 Evoluir o sistema de autenticação atual (signup/login básico com JWT) para um sistema robusto e completo que suporte:
+
 - Refresh tokens com rotação automática e cleanup
 - Validação de email obrigatória pós-signup
 - Recuperação de senha via email
@@ -17,9 +36,10 @@ Evoluir o sistema de autenticação atual (signup/login básico com JWT) para um
 - Auditoria completa de tentativas de login
 - Notificações por email para eventos críticos
 
-## 2) Premissas / decisões já tomadas (do PRD)
+## 2) Premissas / decisões já tomadas
 
 ### Técnicas:
+
 - Flyway para migrations, Prisma apenas como query builder
 - JWT RS256 (access: 15min, refresh: 7 dias)
 - Argon2 + pepper para senhas
@@ -31,6 +51,7 @@ Evoluir o sistema de autenticação atual (signup/login básico com JWT) para um
 - Mensagens de erro genéricas para não vazar informações
 
 ### Negócio:
+
 - Access token: 15min, refresh token: 7 dias
 - Email de confirmação: 24h, recuperação de senha: 1h
 - Bloqueio após 5 tentativas em 15min, desbloqueio em 30min
@@ -39,6 +60,7 @@ Evoluir o sistema de autenticação atual (signup/login básico com JWT) para um
 - `USER` pertence a 1 organização
 
 ### Sequência de implementação:
+
 1. Database schema (fundação)
 2. Email service (infraestrutura)
 3. Refresh tokens (core)
@@ -55,53 +77,59 @@ Evoluir o sistema de autenticação atual (signup/login básico com JWT) para um
 
 ### **Passo 1: Database Schema - Migrations Flyway**
 
-**Intenção:** Criar tabelas `Organization` e `LoginAttempt`, adicionar campos em `User` (organizationId, loginAttempts, lockedUntil)
+**Intenção:** Criar tabelas `Organization` e `LoginAttempt`, adicionar campos em `User` (organizationId,
+loginAttempts, lockedUntil, isLocked)
 
 **Arquivos/áreas:**
+
 - `flyway/migrations/V3__add_organization_and_auth_enhancements.sql`
 - `prisma/schema.prisma` (atualizar após migration)
 
 **Mudança mínima:**
+
 ```sql
 -- V3__add_organization_and_auth_enhancements.sql
 
 -- Tabela Organization
-CREATE TABLE organizations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL,
-  slug VARCHAR(100) UNIQUE NOT NULL,
-  is_active BOOLEAN DEFAULT true NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+CREATE TABLE organizations
+(
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       VARCHAR(255)                   NOT NULL,
+  slug       VARCHAR(100) UNIQUE            NOT NULL,
+  is_active  BOOLEAN          DEFAULT true  NOT NULL,
+  created_at TIMESTAMP        DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP        DEFAULT NOW() NOT NULL
 );
 
 -- Adicionar campos em users
 ALTER TABLE users
-  ADD COLUMN organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL,
+  ADD COLUMN organization_id UUID REFERENCES organizations (id) ON DELETE SET NULL,
   ADD COLUMN login_attempts INTEGER DEFAULT 0 NOT NULL,
   ADD COLUMN locked_until TIMESTAMP NULL;
 
-CREATE INDEX idx_users_organization_id ON users(organization_id);
-CREATE INDEX idx_users_locked_until ON users(locked_until) WHERE locked_until IS NOT NULL;
+CREATE INDEX idx_users_organization_id ON users (organization_id);
+CREATE INDEX idx_users_locked_until ON users (locked_until) WHERE locked_until IS NOT NULL;
 
 -- Tabela LoginAttempt
-CREATE TABLE login_attempts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) NOT NULL,
-  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  ip_address VARCHAR(45) NOT NULL,
-  user_agent TEXT,
-  success BOOLEAN NOT NULL,
+CREATE TABLE login_attempts
+(
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email          VARCHAR(255)                   NOT NULL,
+  user_id        UUID                           REFERENCES users (id) ON DELETE SET NULL,
+  ip_address     VARCHAR(45)                    NOT NULL,
+  user_agent     TEXT,
+  success        BOOLEAN                        NOT NULL,
   failure_reason VARCHAR(100),
-  timestamp TIMESTAMP DEFAULT NOW() NOT NULL
+  timestamp      TIMESTAMP        DEFAULT NOW() NOT NULL
 );
 
-CREATE INDEX idx_login_attempts_email ON login_attempts(email, timestamp);
-CREATE INDEX idx_login_attempts_user_id ON login_attempts(user_id, timestamp);
-CREATE INDEX idx_login_attempts_timestamp ON login_attempts(timestamp);
+CREATE INDEX idx_login_attempts_email ON login_attempts (email, timestamp);
+CREATE INDEX idx_login_attempts_user_id ON login_attempts (user_id, timestamp);
+CREATE INDEX idx_login_attempts_timestamp ON login_attempts (timestamp);
 ```
 
 **Como verificar:**
+
 ```bash
 make db-migrate          # Aplicar migration
 make db-info             # Verificar que V3 foi aplicada
@@ -110,6 +138,7 @@ make db-gen              # Gerar Prisma client
 ```
 
 **Critério de pronto:**
+
 - Migration V3 aplicada sem erros
 - `prisma/schema.prisma` contém modelos `Organization`, `LoginAttempt` e campos novos em `User`
 - Prisma client gerado com novos tipos
@@ -121,6 +150,7 @@ make db-gen              # Gerar Prisma client
 **Intenção:** Criar serviço de email com Nodemailer, templates HTML, e env vars para SMTP
 
 **Arquivos/áreas:**
+
 - `src/shared/email/` (novo módulo)
   - `email.service.ts`
   - `email.module.ts`
@@ -130,6 +160,7 @@ make db-gen              # Gerar Prisma client
 - `src/config/email.config.ts` (configuração)
 
 **Mudança mínima:**
+
 ```typescript
 // src/shared/email/email.service.ts
 import { Injectable, Logger } from '@nestjs/common';
@@ -167,18 +198,39 @@ export class EmailService {
   // Adicionar métodos: sendPasswordReset, sendAccountLocked, sendPasswordChanged
 
   private getEmailVerificationTemplate(url: string): string {
-    return `<html>...</html>`; // Template HTML simples
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+      </head>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #333;">Verify your email address</h1>
+        <p>Thank you for signing up! Please click the button below to verify your email address:</p>
+        <a href="${url}"
+           style="display: inline-block; padding: 12px 24px; margin: 20px 0; background-color: #007bff;
+                  color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;">
+          Verify Email
+        </a>
+        <p style="color: #666; font-size: 14px;">This link will expire in 24 hours.</p>
+        <p style="color: #666; font-size: 14px;">If you didn't create an account, you can safely ignore this email.</p>
+      </body>
+      </html>
+    `;
   }
 }
 ```
 
 **Dependências:**
+
 ```bash
 npm install nodemailer
 npm install -D @types/nodemailer
 ```
 
 **Como verificar:**
+
 ```bash
 # Adicionar env vars no .env
 SMTP_HOST=smtp.gmail.com
@@ -197,7 +249,9 @@ curl -X POST http://localhost:3000/test/email
 ```
 
 **Critério de pronto:**
-- EmailService criado com métodos: `sendEmailVerification`, `sendPasswordReset`, `sendAccountLocked`, `sendPasswordChanged`
+
+- EmailService criado com métodos: `sendEmailVerification`, `sendPasswordReset`, `sendAccountLocked`,
+  `sendPasswordChanged`
 - Templates HTML criados em `src/shared/email/templates/`
 - Env vars SMTP configuradas
 - Teste unitário passa (mock do transporter)
@@ -207,9 +261,11 @@ curl -X POST http://localhost:3000/test/email
 
 ### **Passo 3: Refresh Tokens - Emissão, Persistência e Rotação**
 
-**Intenção:** Implementar lógica de refresh tokens com rotação automática, limite de 10 tokens ativos, e armazenamento hasheado
+**Intenção:
+** Implementar lógica de refresh tokens com rotação automática, limite de 10 tokens ativos, e armazenamento hasheado
 
 **Arquivos/áreas:**
+
 - `src/modules/auth/domain/models/refresh-token.model.ts` (novo)
 - `src/modules/auth/domain/ports/refresh-token-repository.port.ts` (novo)
 - `src/modules/auth/infra/repositories/refresh-token.repository.ts` (novo)
@@ -221,20 +277,28 @@ curl -X POST http://localhost:3000/test/email
 **Mudança mínima:**
 
 1. Repository port:
+
 ```typescript
 // refresh-token-repository.port.ts
 export interface RefreshTokenRepositoryPort {
   create(refreshToken: RefreshTokenModel): Promise<RefreshTokenModel>;
+
   findByJti(jti: string): Promise<RefreshTokenModel | null>;
+
   findActiveByUserId(userId: string): Promise<RefreshTokenModel[]>;
+
   revokeByJti(jti: string, reason: string, replacedByJti?: string): Promise<void>;
+
   revokeAllByUserId(userId: string, reason: string): Promise<void>;
+
   deleteExpired(): Promise<number>;
+
   deleteOldestByUserId(userId: string, keep: number): Promise<void>;
 }
 ```
 
 2. TokenService:
+
 ```typescript
 // token.service.ts
 @Injectable()
@@ -271,8 +335,16 @@ export class TokenService {
 ```
 
 3. AuthService (atualizar login):
+
 ```typescript
-async login(payload: JwtPayloadModel, metadata): Promise<{ accessToken, refreshToken }> {
+// IMPORTANTE: Este método substitui o login atual que retorna apenas accessToken
+// O controller deve ser atualizado para setar refresh token em cookie httpOnly
+async
+login(payload
+:
+JwtPayloadModel, metadata
+):
+Promise < { accessToken, refreshToken } > {
   const accessToken = this.jwtService.sign(payload);
   const refreshToken = await this.tokenService.generateRefreshToken(payload.userId, metadata);
   return { accessToken, refreshToken };
@@ -280,9 +352,15 @@ async login(payload: JwtPayloadModel, metadata): Promise<{ accessToken, refreshT
 ```
 
 4. Controller (adicionar endpoints):
+
 ```typescript
 @Post('/refresh')
-async refresh(@Req() req, @Res() res) {
+async
+refresh(@Req()
+req, @Res()
+res
+)
+{
   const oldRefreshToken = req.cookies.refreshToken;
   const { accessToken, refreshToken } = await this.authService.refresh(oldRefreshToken, metadata);
 
@@ -297,7 +375,12 @@ async refresh(@Req() req, @Res() res) {
 }
 
 @Post('/logout')
-async logout(@Req() req, @Res() res) {
+async
+logout(@Req()
+req, @Res()
+res
+)
+{
   await this.authService.logout(req.cookies.refreshToken);
   res.clearCookie('refreshToken');
   return res.json({ message: 'Logged out successfully' });
@@ -305,12 +388,28 @@ async logout(@Req() req, @Res() res) {
 ```
 
 **Dependências:**
+
 ```bash
 npm install cookie-parser
 npm install -D @types/cookie-parser
 ```
 
+**Configuração:**
+
+```typescript
+// main.ts
+import * as cookieParser from 'cookie-parser';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.use(cookieParser()); // ADICIONAR para parsear cookies
+  // ...
+  await app.listen(3000);
+}
+```
+
 **Como verificar:**
+
 ```bash
 # Testes unitários
 npm test -- token.service.spec.ts
@@ -320,13 +419,17 @@ npm test -- auth.service.spec.ts
 npm run test:e2e -- auth.e2e-spec.ts
 
 # Manual:
-# 1. Login: POST /v1/auth/login -> verificar cookie refreshToken
-# 2. Refresh: POST /v1/auth/refresh -> verificar novo accessToken e novo refreshToken
-# 3. Logout: POST /v1/auth/logout -> verificar cookie removido
-# 4. Tentar usar refresh token após logout: deve retornar 401
+# IMPORTANTE: Antes de implementar, verificar que /login atual retorna apenas { accessToken }
+# 1. Login: POST /v1/auth/login -> verificar que retorna { accessToken } + cookie httpOnly refreshToken
+# 2. Verificar no DevTools -> Application -> Cookies que refreshToken está presente com flags httpOnly, secure, sameSite
+# 3. Refresh: POST /v1/auth/refresh -> verificar novo accessToken e novo refreshToken (rotacionado)
+# 4. Logout: POST /v1/auth/logout -> verificar cookie removido
+# 5. Tentar usar refresh token após logout: deve retornar 401
+# 6. Login com 10 dispositivos diferentes -> 11º login deve remover o refresh token mais antigo
 ```
 
 **Critério de pronto:**
+
 - RefreshToken repository implementado
 - TokenService com `generateRefreshToken`, `rotateRefreshToken`, `validateRefreshToken`
 - Login retorna access token (JSON) + refresh token (cookie httpOnly)
@@ -343,6 +446,7 @@ npm run test:e2e -- auth.e2e-spec.ts
 **Intenção:** Registrar todas as tentativas de login (sucesso/falha) na tabela `LoginAttempt` para auditoria
 
 **Arquivos/áreas:**
+
 - `src/modules/auth/domain/models/login-attempt.model.ts` (novo)
 - `src/modules/auth/domain/ports/login-attempt-repository.port.ts` (novo)
 - `src/modules/auth/infra/repositories/login-attempt.repository.ts` (novo)
@@ -350,16 +454,28 @@ npm run test:e2e -- auth.e2e-spec.ts
 - `src/modules/auth/infra/adapters/credentials/password.strategy.ts` (atualizar)
 
 **Mudança mínima:**
+
 ```typescript
 // login-attempt-repository.port.ts
 export interface LoginAttemptRepositoryPort {
   create(attempt: LoginAttemptModel): Promise<LoginAttemptModel>;
+
   countRecentFailuresByUserId(userId: string, withinMinutes: number): Promise<number>;
+
   deleteOlderThan(days: number): Promise<number>;
 }
 
 // auth.service.ts - adicionar método
-async recordLoginAttempt(email: string, userId: string | null, success: boolean, metadata): Promise<void> {
+async
+recordLoginAttempt(email
+:
+string, userId
+:
+string | null, success
+:
+boolean, metadata
+):
+Promise < void > {
   await this.loginAttemptRepository.create({
     email,
     userId,
@@ -374,23 +490,35 @@ async recordLoginAttempt(email: string, userId: string | null, success: boolean,
 }
 
 // password.strategy.ts - chamar recordLoginAttempt
-async validate(email: string, password: string): Promise<JwtPayloadModel> {
+async
+validate(email
+:
+string, password
+:
+string
+):
+Promise < JwtPayloadModel > {
   try {
     const user = await this.userRepository.findByEmail(email);
-    if (!user || !this.hashService.verify(password, user.passwordHash)) {
-      await this.authService.recordLoginAttempt(email, user?.id, false, metadata);
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    if(!user || !this.hashService.verify(password, user.passwordHash)
+)
+{
+  await this.authService.recordLoginAttempt(email, user?.id, false, metadata);
+  throw new UnauthorizedException('Invalid credentials');
+}
 
-    await this.authService.recordLoginAttempt(email, user.id, true, metadata);
-    return { userId: user.id, email: user.email, roles: user.roles };
-  } catch (error) {
-    // Log e throw
-  }
+await this.authService.recordLoginAttempt(email, user.id, true, metadata);
+return { userId: user.id, email: user.email, roles: user.roles };
+} catch
+(error)
+{
+  // Log e throw
+}
 }
 ```
 
 **Como verificar:**
+
 ```bash
 # Testes unitários
 npm test -- login-attempt.repository.spec.ts
@@ -404,6 +532,7 @@ npm test -- auth.service.spec.ts
 ```
 
 **Critério de pronto:**
+
 - LoginAttempt repository implementado
 - Toda tentativa de login (sucesso/falha) gera registro em `login_attempts`
 - Logs estruturados registram tentativas
@@ -417,15 +546,22 @@ npm test -- auth.service.spec.ts
 **Intenção:** Exigir validação de email após signup, enviar email de confirmação, bloquear login até verificação
 
 **Arquivos/áreas:**
+
 - `src/modules/auth/application/services/auth.service.ts` (atualizar signup e adicionar verifyEmail)
 - `src/modules/auth/presentation/controllers/auth.controller.ts` (adicionar endpoints)
 - `src/modules/auth/application/dtos/verify-email.dto.ts` (novo)
 - `src/modules/auth/infra/adapters/credentials/password.strategy.ts` (validar emailVerified)
 
 **Mudança mínima:**
+
 ```typescript
 // auth.service.ts
-async signup(signupDto: SignupDto): Promise<{ userId: string }> {
+async
+signup(signupDto
+:
+SignupDto
+):
+Promise < { userId: string } > {
   await this.verifyEmailIsAvailable(signupDto.email);
 
   const hashedPassword = this.hashService.hash(signupDto.password);
@@ -452,63 +588,91 @@ async signup(signupDto: SignupDto): Promise<{ userId: string }> {
   return { userId: user.id };
 }
 
-async verifyEmail(token: string): Promise<void> {
+async
+verifyEmail(token
+:
+string
+):
+Promise < void > {
   try {
     const payload = this.jwtService.verify(token);
 
-    if (payload.type !== 'email_verification') {
-      throw new BadRequestException('Invalid token type');
-    }
-
-    await this.userRepository.updateEmailVerified(payload.userId, true);
-    this.logger.log(`Email verified successfully - userId: ${payload.userId}`);
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      throw new BadRequestException('Verification link expired. Please request a new one.');
-    }
-    throw new BadRequestException('Invalid verification token');
-  }
+    if(payload.type !== 'email_verification'
+)
+{
+  throw new BadRequestException('Invalid token type');
 }
 
-async resendVerification(email: string): Promise<void> {
+await this.userRepository.updateEmailVerified(payload.userId, true);
+this.logger.log(`Email verified successfully - userId: ${payload.userId}`);
+} catch
+(error)
+{
+  if (error.name === 'TokenExpiredError') {
+    throw new BadRequestException('Verification link expired. Please request a new one.');
+  }
+  throw new BadRequestException('Invalid verification token');
+}
+}
+
+async
+resendVerification(email
+:
+string
+):
+Promise < void > {
   const user = await this.userRepository.findByEmail(email);
 
-  if (!user) {
-    // Não vazar se email existe, retornar sucesso genérico
-    this.logger.warn(`Verification resend requested for non-existent email: ${email}`);
-    return;
-  }
+  if(!
+user
+)
+{
+  // Não vazar se email existe, retornar sucesso genérico
+  this.logger.warn(`Verification resend requested for non-existent email: ${email}`);
+  return;
+}
 
-  if (user.emailVerified) {
-    throw new BadRequestException('Email already verified');
-  }
+if (user.emailVerified) {
+  throw new BadRequestException('Email already verified');
+}
 
-  const token = this.jwtService.sign(
-    { userId: user.id, type: 'email_verification' },
-    { expiresIn: '24h' }
-  );
+const token = this.jwtService.sign(
+  { userId: user.id, type: 'email_verification' },
+  { expiresIn: '24h' }
+);
 
-  await this.emailService.sendEmailVerification(user.email, token);
-  this.logger.log(`Verification email resent - userId: ${user.id}`);
+await this.emailService.sendEmailVerification(user.email, token);
+this.logger.log(`Verification email resent - userId: ${user.id}`);
 }
 
 // password.strategy.ts - validar emailVerified
-async validate(email: string, password: string): Promise<JwtPayloadModel> {
+async
+validate(email
+:
+string, password
+:
+string
+):
+Promise < JwtPayloadModel > {
   const user = await this.userRepository.findByEmail(email);
 
-  if (!user || !this.hashService.verify(password, user.passwordHash)) {
-    throw new UnauthorizedException('Invalid credentials');
-  }
+  if(!
+user || !this.hashService.verify(password, user.passwordHash)
+)
+{
+  throw new UnauthorizedException('Invalid credentials');
+}
 
-  if (!user.emailVerified) {
-    throw new UnauthorizedException('Please verify your email before logging in');
-  }
+if (!user.emailVerified) {
+  throw new UnauthorizedException('Please verify your email before logging in');
+}
 
-  // Continue...
+// Continue...
 }
 ```
 
 **Como verificar:**
+
 ```bash
 # Testes unitários
 npm test -- auth.service.spec.ts
@@ -526,6 +690,7 @@ npm run test:e2e -- auth.e2e-spec.ts
 ```
 
 **Critério de pronto:**
+
 - Signup cria usuário com `emailVerified: false` e envia email
 - Login bloqueado se `emailVerified: false`
 - Endpoint `/verify-email` marca `emailVerified: true`
@@ -537,64 +702,87 @@ npm run test:e2e -- auth.e2e-spec.ts
 
 ### **Passo 6: Recuperação de Senha - Forgot/Reset Password**
 
-**Intenção:** Implementar fluxo de recuperação de senha via email com link expirável (1h) e invalidação de refresh tokens
+**Intenção:
+** Implementar fluxo de recuperação de senha via email com link expirável (1h) e invalidação de refresh tokens
 
 **Arquivos/áreas:**
+
 - `src/modules/auth/application/services/auth.service.ts` (adicionar métodos)
 - `src/modules/auth/presentation/controllers/auth.controller.ts` (adicionar endpoints)
 - `src/modules/auth/application/dtos/forgot-password.dto.ts` (novo)
 - `src/modules/auth/application/dtos/reset-password.dto.ts` (novo)
 
 **Mudança mínima:**
+
 ```typescript
 // auth.service.ts
-async forgotPassword(email: string): Promise<void> {
+async
+forgotPassword(email
+:
+string
+):
+Promise < void > {
   const user = await this.userRepository.findByEmail(email);
 
-  if (!user) {
-    // Não vazar se email existe
-    this.logger.warn(`Password reset requested for non-existent email: ${email}`);
-    return;
-  }
-
-  const resetToken = this.jwtService.sign(
-    { userId: user.id, type: 'password_reset' },
-    { expiresIn: '1h' }
-  );
-
-  await this.emailService.sendPasswordReset(user.email, resetToken);
-  this.logger.log(`Password reset email sent - userId: ${user.id}`);
+  if(!
+user
+)
+{
+  // Não vazar se email existe
+  this.logger.warn(`Password reset requested for non-existent email: ${email}`);
+  return;
 }
 
-async resetPassword(token: string, newPassword: string): Promise<void> {
+const resetToken = this.jwtService.sign(
+  { userId: user.id, type: 'password_reset' },
+  { expiresIn: '1h' }
+);
+
+await this.emailService.sendPasswordReset(user.email, resetToken);
+this.logger.log(`Password reset email sent - userId: ${user.id}`);
+}
+
+async
+resetPassword(token
+:
+string, newPassword
+:
+string
+):
+Promise < void > {
   try {
     const payload = this.jwtService.verify(token);
 
-    if (payload.type !== 'password_reset') {
-      throw new BadRequestException('Invalid token type');
-    }
+    if(payload.type !== 'password_reset'
+)
+{
+  throw new BadRequestException('Invalid token type');
+}
 
-    const hashedPassword = this.hashService.hash(newPassword);
-    await this.userRepository.updatePassword(payload.userId, hashedPassword);
+const hashedPassword = this.hashService.hash(newPassword);
+await this.userRepository.updatePassword(payload.userId, hashedPassword);
 
-    // Invalidar todos os refresh tokens do usuário
-    await this.refreshTokenRepository.revokeAllByUserId(payload.userId, 'password_reset');
+// Invalidar todos os refresh tokens do usuário
+await this.refreshTokenRepository.revokeAllByUserId(payload.userId, 'password_reset');
 
-    // Enviar email de confirmação
-    const user = await this.userRepository.findById(payload.userId);
-    await this.emailService.sendPasswordChanged(user.email);
+// Enviar email de confirmação
+const user = await this.userRepository.findById(payload.userId);
+await this.emailService.sendPasswordChanged(user.email);
 
-    this.logger.log(`Password reset successfully - userId: ${payload.userId}`);
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      throw new BadRequestException('Reset link expired. Please request a new one.');
-    }
-    throw new BadRequestException('Invalid reset token');
+this.logger.log(`Password reset successfully - userId: ${payload.userId}`);
+} catch
+(error)
+{
+  if (error.name === 'TokenExpiredError') {
+    throw new BadRequestException('Reset link expired. Please request a new one.');
   }
+  throw new BadRequestException('Invalid reset token');
+}
 }
 ```
 
 **Como verificar:**
+
 ```bash
 # Testes unitários
 npm test -- auth.service.spec.ts
@@ -612,6 +800,7 @@ npm run test:e2e -- auth.e2e-spec.ts
 ```
 
 **Critério de pronto:**
+
 - Endpoint `/forgot-password` envia email com token (1h expiração)
 - Endpoint `/reset-password` atualiza senha e invalida todos refresh tokens
 - Email de confirmação enviado após reset
@@ -623,17 +812,34 @@ npm run test:e2e -- auth.e2e-spec.ts
 
 ### **Passo 7: Bloqueio de Conta - Brute Force Protection**
 
-**Intenção:** Bloquear conta após 5 tentativas falhas em 15min, enviar email de notificação, desbloqueio automático em 30min
+**Intenção:
+** Bloquear conta após 5 tentativas falhas em 15min, enviar email de notificação, desbloqueio automático em 30min
+
+**⚠️ ATENÇÃO:** Este passo modifica `password.strategy.ts` que foi alterado no **Passo 5
+** (validação de emailVerified). As mudanças devem ser integradas incrementalmente:
+
+1. Validação de emailVerified (Passo 5)
+2. Verificação de lockout (este passo)
+3. Contagem de tentativas falhas (este passo)
 
 **Arquivos/áreas:**
+
 - `src/modules/auth/application/services/auth.service.ts` (adicionar lógica de bloqueio)
-- `src/modules/auth/infra/adapters/credentials/password.strategy.ts` (verificar lockout)
+- `src/modules/auth/infra/adapters/credentials/password.strategy.ts` (verificar lockout) ⚠️ **Modificado no Passo 5**
 - `src/modules/user/domain/ports/user-repository.port.ts` (adicionar métodos)
 
 **Mudança mínima:**
+
 ```typescript
 // auth.service.ts
-async handleFailedLoginAttempt(userId: string, email: string): Promise<void> {
+async
+handleFailedLoginAttempt(userId
+:
+string, email
+:
+string
+):
+Promise < void > {
   const user = await this.userRepository.findById(userId);
 
   const recentFailures = await this.loginAttemptRepository.countRecentFailuresByUserId(
@@ -641,57 +847,93 @@ async handleFailedLoginAttempt(userId: string, email: string): Promise<void> {
     15 // últimos 15 minutos
   );
 
-  if (recentFailures >= 4) { // 5ª tentativa falha
-    const lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30min
-    await this.userRepository.lockAccount(userId, lockedUntil);
+  if(recentFailures >= 4
+)
+{ // 5ª tentativa falha
+  const lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30min
+  await this.userRepository.lockAccount(userId, lockedUntil);
+  await this.userRepository.updateIsLocked(userId, false); // Bloquear conta
 
-    await this.emailService.sendAccountLocked(email, lockedUntil);
+  await this.emailService.sendAccountLocked(email, lockedUntil);
 
-    this.logger.warn(`Account locked due to failed login attempts - userId: ${userId}`);
-    throw new UnauthorizedException('Account locked. Please try again in 30 minutes or contact support.');
-  }
+  this.logger.warn(`Account locked due to failed login attempts - userId: ${userId}`);
+  throw new UnauthorizedException('Account locked. Please try again in 30 minutes or contact support.');
+}
 }
 
-async checkIfAccountLocked(user: UserModel): Promise<void> {
-  if (user.lockedUntil && user.lockedUntil > new Date()) {
-    const minutesLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
-    throw new UnauthorizedException(`Account locked. Try again in ${minutesLeft} minutes.`);
-  }
+async
+checkIfAccountLocked(user
+:
+UserModel
+):
+Promise < void > {
+  if(user.lockedUntil && user.lockedUntil > new Date()
+)
+{
+  const minutesLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+  throw new UnauthorizedException(`Account locked. Try again in ${minutesLeft} minutes.`);
+}
 
-  // Se lockedUntil passou, resetar
-  if (user.lockedUntil && user.lockedUntil <= new Date()) {
-    await this.userRepository.unlockAccount(user.id);
-    this.logger.log(`Account automatically unlocked - userId: ${user.id}`);
-  }
+// Se lockedUntil passou, resetar e reativar conta
+if (user.lockedUntil && user.lockedUntil <= new Date()) {
+  await this.userRepository.unlockAccount(user.id);
+  await this.userRepository.updateIsLocked(user.id, true); // Reativar conta
+  this.logger.log(`Account automatically unlocked - userId: ${user.id}`);
+}
 }
 
 // password.strategy.ts
-async validate(email: string, password: string): Promise<JwtPayloadModel> {
+// ATENÇÃO: Este arquivo também foi modificado no Passo 5 (validação de emailVerified)
+// As mudanças devem ser integradas incrementalmente
+async
+validate(email
+:
+string, password
+:
+string
+):
+Promise < JwtPayloadModel > {
   const user = await this.userRepository.findByEmail(email);
 
-  if (!user) {
-    await this.authService.recordLoginAttempt(email, null, false, metadata);
-    throw new UnauthorizedException('Invalid credentials');
-  }
+  if(!
+user
+)
+{
+  await this.authService.recordLoginAttempt(email, null, false, metadata);
+  throw new UnauthorizedException('Invalid credentials');
+}
 
-  // Verificar lockout antes de validar senha
-  await this.authService.checkIfAccountLocked(user);
+// Verificar lockout antes de validar senha
+await this.authService.checkIfAccountLocked(user);
 
-  if (!this.hashService.verify(password, user.passwordHash)) {
-    await this.authService.recordLoginAttempt(email, user.id, false, metadata);
-    await this.authService.handleFailedLoginAttempt(user.id, email);
-    throw new UnauthorizedException('Invalid credentials');
-  }
+if (!this.hashService.verify(password, user.passwordHash)) {
+  await this.authService.recordLoginAttempt(email, user.id, false, metadata);
+  await this.authService.handleFailedLoginAttempt(user.id, email);
+  throw new UnauthorizedException('Invalid credentials');
+}
 
-  // Sucesso: resetar loginAttempts
-  await this.userRepository.resetLoginAttempts(user.id);
-  await this.authService.recordLoginAttempt(email, user.id, true, metadata);
+// Sucesso: resetar loginAttempts
+await this.userRepository.resetLoginAttempts(user.id);
+await this.authService.recordLoginAttempt(email, user.id, true, metadata);
 
-  // Continue...
+// Continue...
+}
+
+// user-repository.port.ts - Adicionar métodos necessários
+export interface UserRepositoryPort {
+  // ... métodos existentes
+  lockAccount(userId: string, lockedUntil: Date): Promise<void>;
+
+  unlockAccount(userId: string): Promise<void>;
+
+  updateIsLocked(userId: string, isLocked: boolean): Promise<void>;
+
+  resetLoginAttempts(userId: string): Promise<void>;
 }
 ```
 
 **Como verificar:**
+
 ```bash
 # Testes unitários
 npm test -- auth.service.spec.ts
@@ -708,11 +950,15 @@ npm run test:e2e -- auth-lockout.e2e-spec.ts
 ```
 
 **Critério de pronto:**
+
 - Conta bloqueada após 5 tentativas falhas em 15min
+- Campo `isLocked` setado para `true` ao bloquear
+- Campo `isLocked` setado para `false` ao desbloquear automaticamente
 - Email de notificação enviado ao bloquear
 - Login bloqueado retorna mensagem clara com tempo restante
 - Desbloqueio automático após 30min
 - `loginAttempts` resetado após login bem-sucedido
+- Métodos `lockAccount`, `unlockAccount`, `updateIsLocked`, `resetLoginAttempts` implementados no UserRepository
 - Testes E2E simulando lockout
 
 ---
@@ -722,27 +968,44 @@ npm run test:e2e -- auth-lockout.e2e-spec.ts
 **Intenção:** Implementar isolamento por organização, adicionar `organizationId` em signup, validar acesso em guards
 
 **Arquivos/áreas:**
-- `src/modules/organization/` (novo módulo completo)
-  - `domain/models/organization.model.ts`
-  - `domain/ports/organization-repository.port.ts`
-  - `infra/repositories/organization.repository.ts`
-  - `application/services/organization.service.ts`
-  - `presentation/controllers/organization.controller.ts`
-- `src/modules/auth/application/dtos/signup.dto.ts` (adicionar organizationId)
-- `src/modules/auth/application/services/auth.service.ts` (validar organizationId)
-- `src/shared/guards/organization.guard.ts` (novo)
+
+- `src/modules/organization/` (novo módulo completo seguindo arquitetura hexagonal)
+  ```
+  organization/
+    domain/
+      models/organization.model.ts
+      ports/organization-repository.port.ts
+    application/
+      services/organization.service.ts
+      dtos/create-organization.dto.ts
+      dtos/update-organization.dto.ts
+    infra/
+      repositories/organization.repository.ts
+    presentation/
+      controllers/organization.controller.ts
+    organization.module.ts
+  ```
+- `src/modules/auth/application/dtos/signup.dto.ts` (adicionar organizationId com validação)
+- `src/modules/auth/application/services/auth.service.ts` (validar organizationId no signup)
+- `src/shared/guards/organization.guard.ts` (novo - isolamento multi-tenancy)
 - `scripts/seed.ts` (criar SUPER_ADMIN e org inicial)
 
 **Mudança mínima:**
 
-1. SignupDto:
+1. SignupDto (adicionar validação de senha forte):
+
 ```typescript
+import { IsEmail, IsString, IsUUID, IsOptional, MinLength, Matches } from 'class-validator';
+
 export class SignupDto {
   @IsEmail()
   email: string;
 
   @IsString()
   @MinLength(8)
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/, {
+    message: 'Password must contain at least 8 characters, 1 letter, 1 number, and 1 special character',
+  })
   password: string;
 
   @IsString()
@@ -755,29 +1018,40 @@ export class SignupDto {
 ```
 
 2. AuthService signup:
+
 ```typescript
-async signup(signupDto: SignupDto): Promise<{ userId: string }> {
+async
+signup(signupDto
+:
+SignupDto
+):
+Promise < { userId: string } > {
   // Validar que organizationId foi fornecido (exceto para SUPER_ADMIN manual)
-  if (!signupDto.organizationId) {
-    throw new BadRequestException('Organization ID is required');
-  }
+  if(!
+signupDto.organizationId
+)
+{
+  throw new BadRequestException('Organization ID is required');
+}
 
-  // Verificar que organização existe
-  const org = await this.organizationRepository.findById(signupDto.organizationId);
-  if (!org || !org.isActive) {
-    throw new BadRequestException('Invalid organization');
-  }
+// Verificar que organização existe
+const org = await this.organizationRepository.findById(signupDto.organizationId);
+if (!org || !org.isActive) {
+  throw new BadRequestException('Invalid organization');
+}
 
-  // Continue signup...
-  const newUser = UserModel.create({
-    ...signupDto,
-    organizationId: signupDto.organizationId,
-  });
+// Continue signup...
+const newUser = UserModel.create({
+  ...signupDto,
+  organizationId: signupDto.organizationId,
+});
 }
 ```
 
 3. OrganizationGuard:
+
 ```typescript
+
 @Injectable()
 export class OrganizationGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
@@ -805,7 +1079,63 @@ export class OrganizationGuard implements CanActivate {
 }
 ```
 
-4. Seed script:
+4. OrganizationService (exemplo):
+
+```typescript
+// organization.service.ts
+@Injectable()
+export class OrganizationService {
+  constructor(private organizationRepository: OrganizationRepositoryPort) {
+  }
+
+  async create(createDto: CreateOrganizationDto): Promise<OrganizationModel> {
+    // Validar que slug é único
+    const existing = await this.organizationRepository.findBySlug(createDto.slug);
+    if (existing) {
+      throw new ConflictException('Organization slug already exists');
+    }
+
+    const organization = OrganizationModel.create(createDto);
+    return await this.organizationRepository.create(organization);
+  }
+
+  async findAll(): Promise<OrganizationModel[]> {
+    return await this.organizationRepository.findAll();
+  }
+
+  async findById(id: string): Promise<OrganizationModel | null> {
+    return await this.organizationRepository.findById(id);
+  }
+}
+```
+
+5. OrganizationController (exemplo):
+
+```typescript
+// organization.controller.ts
+@ApiTags('Organizations')
+@Controller('/organizations')
+@UseGuards(JwtAuthGuard, RolesGuard(RoleEnum.SUPER_ADMIN)) // Apenas SUPER_ADMIN
+export class OrganizationController {
+  constructor(private service: OrganizationService) {
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new organization (SUPER_ADMIN only)' })
+  async create(@Body() createDto: CreateOrganizationDto) {
+    return await this.service.create(createDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'List all organizations (SUPER_ADMIN only)' })
+  async findAll() {
+    return await this.service.findAll();
+  }
+}
+```
+
+6. Seed script:
+
 ```typescript
 // scripts/seed.ts
 async function seed() {
@@ -837,6 +1167,7 @@ async function seed() {
 ```
 
 **Como verificar:**
+
 ```bash
 # Rodar seed
 make db-seed
@@ -855,12 +1186,14 @@ npm test -- organization.guard.spec.ts
 ```
 
 **Critério de pronto:**
+
 - Modelo `Organization` criado
 - Signup exige `organizationId` (exceto SUPER_ADMIN)
+- Signup valida senha forte (mín 8 chars, 1 letra, 1 número, 1 caractere especial)
 - `OrganizationGuard` bloqueia acesso cross-org
 - SUPER_ADMIN tem acesso global (`organizationId: null`)
 - Seed script cria SUPER_ADMIN e org inicial
-- Testes E2E validando isolamento
+- Testes E2E validando isolamento e rejeição de senhas fracas
 
 ---
 
@@ -869,11 +1202,13 @@ npm test -- organization.guard.spec.ts
 **Intenção:** Aplicar rate limiting de 5 req/min por IP nos endpoints de autenticação
 
 **Arquivos/áreas:**
+
 - `src/main.ts` (configurar ThrottlerModule globalmente)
 - `src/modules/auth/presentation/controllers/auth.controller.ts` (decorators)
 - `package.json` (adicionar @nestjs/throttler)
 
 **Mudança mínima:**
+
 ```typescript
 // main.ts (já tem ThrottlerModule global 30/min)
 // Adicionar override específico nos controllers
@@ -914,6 +1249,7 @@ export class AuthController {
 ```
 
 **Como verificar:**
+
 ```bash
 # Teste manual (usar script ou Postman)
 # 1. Fazer 6 requests consecutivos em /auth/login
@@ -924,6 +1260,7 @@ npm run test:e2e -- rate-limit.e2e-spec.ts
 ```
 
 **Critério de pronto:**
+
 - Endpoints `/signup`, `/login`, `/forgot-password`: 5 req/min por IP
 - Endpoint `/resend-verification`: 1 req/5min por IP
 - 6º request em < 1min retorna 429
@@ -936,10 +1273,12 @@ npm run test:e2e -- rate-limit.e2e-spec.ts
 **Intenção:** Criar jobs cron diários para remover refresh tokens expirados e login attempts antigos (> 60 dias)
 
 **Arquivos/áreas:**
+
 - `src/modules/auth/application/services/cleanup.service.ts` (novo)
 - `src/modules/auth/auth.module.ts` (registrar ScheduleModule)
 
 **Mudança mínima:**
+
 ```typescript
 // cleanup.service.ts
 import { Injectable, Logger } from '@nestjs/common';
@@ -952,7 +1291,8 @@ export class CleanupService {
   constructor(
     private refreshTokenRepository: RefreshTokenRepositoryPort,
     private loginAttemptRepository: LoginAttemptRepositoryPort,
-  ) {}
+  ) {
+  }
 
   @Cron('0 3 * * *', { timeZone: 'UTC' }) // Diariamente às 03:00 UTC
   async cleanupExpiredRefreshTokens() {
@@ -982,15 +1322,18 @@ import { ScheduleModule } from '@nestjs/schedule';
     // ...
   ],
 })
-export class AuthModule {}
+export class AuthModule {
+}
 ```
 
 **Dependências:**
+
 ```bash
 npm install @nestjs/schedule
 ```
 
 **Como verificar:**
+
 ```bash
 # Teste manual (forçar execução):
 # 1. Adicionar endpoint temporário que chama os métodos diretamente
@@ -1006,6 +1349,7 @@ npm test -- cleanup.service.spec.ts
 ```
 
 **Critério de pronto:**
+
 - Cron job roda diariamente às 03:00 UTC (refresh tokens)
 - Cron job roda diariamente às 04:00 UTC (login attempts > 60 dias)
 - Logs estruturados registram execução
@@ -1018,6 +1362,7 @@ npm test -- cleanup.service.spec.ts
 **Intenção:** Garantir cobertura de testes >= 90% em módulos críticos (AuthService, guards, strategies, repositories)
 
 **Arquivos/áreas:**
+
 - `src/modules/auth/**/*.spec.ts` (atualizar todos)
 - `test/auth.e2e-spec.ts` (criar/atualizar)
 
@@ -1026,41 +1371,47 @@ npm test -- cleanup.service.spec.ts
 Criar/atualizar testes para cobrir:
 
 1. **AuthService:**
-   - signup (com/sem organizationId, email duplicado)
-   - login (sucesso, email não verificado, conta bloqueada)
-   - refresh (rotação, token expirado, token revogado, detecção de roubo)
-   - logout (invalidação)
-   - verifyEmail (sucesso, token expirado)
-   - resendVerification (rate limit)
-   - forgotPassword (email existe/não existe)
-   - resetPassword (sucesso, token expirado, invalidação de refresh tokens)
-   - handleFailedLoginAttempt (bloqueio após 5 tentativas)
-   - checkIfAccountLocked (bloqueio, desbloqueio automático)
+
+- signup (com/sem organizationId, email duplicado)
+- login (sucesso, email não verificado, conta bloqueada)
+- refresh (rotação, token expirado, token revogado, detecção de roubo)
+- logout (invalidação)
+- verifyEmail (sucesso, token expirado)
+- resendVerification (rate limit)
+- forgotPassword (email existe/não existe)
+- resetPassword (sucesso, token expirado, invalidação de refresh tokens)
+- handleFailedLoginAttempt (bloqueio após 5 tentativas)
+- checkIfAccountLocked (bloqueio, desbloqueio automático)
 
 2. **TokenService:**
-   - generateRefreshToken (limite 10 tokens)
-   - rotateRefreshToken (rotação, validação hash)
-   - validateRefreshToken (detecção de roubo)
+
+- generateRefreshToken (limite 10 tokens)
+- rotateRefreshToken (rotação, validação hash)
+- validateRefreshToken (detecção de roubo)
 
 3. **Guards:**
-   - JwtAuthGuard (token válido/inválido/expirado)
-   - PasswordAuthGuard (email/senha, email não verificado, conta bloqueada)
-   - OrganizationGuard (SUPER_ADMIN, USER cross-org, USER mesma org)
+
+- JwtAuthGuard (token válido/inválido/expirado)
+- PasswordAuthGuard (email/senha, email não verificado, conta bloqueada)
+- OrganizationGuard (SUPER_ADMIN, USER cross-org, USER mesma org)
 
 4. **Repositories:**
-   - RefreshTokenRepository (CRUD, cleanup, deleteOldest)
-   - LoginAttemptRepository (create, countRecent, deleteOld)
-   - OrganizationRepository (CRUD)
+
+- RefreshTokenRepository (CRUD, cleanup, deleteOldest)
+- LoginAttemptRepository (create, countRecent, deleteOld)
+- OrganizationRepository (CRUD)
 
 5. **E2E:**
-   - Signup + verificação de email + login
-   - Login + refresh + logout
-   - Recuperação de senha completa
-   - Bloqueio após 5 tentativas falhas
-   - Multi-tenancy (isolamento cross-org)
-   - Rate limiting (6º request retorna 429)
+
+- Signup + verificação de email + login
+- Login + refresh + logout
+- Recuperação de senha completa
+- Bloqueio após 5 tentativas falhas
+- Multi-tenancy (isolamento cross-org)
+- Rate limiting (6º request retorna 429)
 
 **Como verificar:**
+
 ```bash
 # Testes unitários
 npm test
@@ -1081,6 +1432,7 @@ npm run test:e2e
 ```
 
 **Critério de pronto:**
+
 - Coverage >= 90% em módulos críticos
 - 100% dos testes unitários passando
 - 100% dos testes E2E passando
@@ -1094,10 +1446,12 @@ npm run test:e2e
 **Intenção:** Atualizar Swagger com todos os novos endpoints e atualizar README com mudanças críticas
 
 **Arquivos/áreas:**
+
 - `src/modules/auth/presentation/controllers/auth.controller.ts` (decorators Swagger)
 - `README.md` (adicionar seção de autenticação)
 
 **Mudança mínima:**
+
 ```typescript
 // auth.controller.ts
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiCookieAuth } from '@nestjs/swagger';
@@ -1138,10 +1492,12 @@ export class AuthController {
 ```
 
 README.md:
+
 ```markdown
 ## Authentication
 
 ### Features
+
 - JWT RS256 authentication (access token: 15min, refresh token: 7 days)
 - Email verification required for signup
 - Password recovery via email
@@ -1152,6 +1508,7 @@ README.md:
 - Audit logging of all login attempts
 
 ### Endpoints
+
 - `POST /v1/auth/signup` - Register new user
 - `POST /v1/auth/login` - Login and get tokens
 - `POST /v1/auth/refresh` - Refresh access token
@@ -1164,6 +1521,7 @@ README.md:
 See `/api` for full Swagger documentation.
 
 ### Environment Variables
+
 ```bash
 # SMTP Configuration (required for emails)
 SMTP_HOST=smtp.gmail.com
@@ -1178,6 +1536,7 @@ FRONTEND_URL=http://localhost:5173
 ```
 
 ### Initial Setup
+
 ```bash
 # Generate JWT keys
 make keys
@@ -1186,6 +1545,7 @@ make keys
 make db-setup
 make db-seed
 ```
+
 ```
 
 **Como verificar:**
@@ -1202,6 +1562,7 @@ open http://localhost:3000/api
 ```
 
 **Critério de pronto:**
+
 - Todos os endpoints de autenticação documentados no Swagger
 - Exemplos de request/response corretos
 - README atualizado com seção de autenticação
@@ -1213,52 +1574,73 @@ open http://localhost:3000/api
 ## 4) Riscos e mitigação
 
 ### Risco 1: SMTP não configurado em ambiente de desenvolvimento
+
 **Impacto:** Emails não são enviados, impossibilitando testes de verificação de email e recuperação de senha
 **Mitigação:**
+
 - Adicionar mock de EmailService em testes
 - Documentar claramente no README como configurar SMTP de teste (Gmail App Password, Mailtrap, etc.)
 - Considerar adicionar flag `SKIP_EMAIL=true` em dev para bypass temporário
 
 ### Risco 2: Performance do cleanup job com milhões de registros
+
 **Impacto:** Job de cleanup pode travar por muito tempo ou consumir muita memória
 **Mitigação:**
+
 - Implementar cleanup em batches (DELETE LIMIT 1000)
 - Adicionar índices em `expiresAt` e `timestamp`
 - Monitorar duração do job via logs
 
 ### Risco 3: Clock skew entre servidor e cliente causando falha de validação de tokens
+
 **Impacto:** Tokens válidos rejeitados ou aceitos indevidamente
 **Mitigação:**
+
 - Usar UTC em todos os timestamps
 - Adicionar margem de ±5min na validação de expiração
 - Documentar importância de NTP nos servidores
 
 ### Risco 4: Quebra de compatibilidade com front-end ao mudar formato de tokens
+
 **Impacto:** Front-end existente para de funcionar após deploy
 **Mitigação:**
+
 - Coordenar mudanças com time de front-end
 - Adicionar versão de API (`/v1/auth`)
 - Deploy incremental: liberar endpoints novos sem quebrar os antigos
 
 ### Risco 5: Vazamento de informações sensíveis em logs
+
 **Impacto:** Senhas, tokens ou dados pessoais expostos em logs
 **Mitigação:**
+
 - Code review rigoroso em PRs
 - Adicionar testes que verificam conteúdo de logs
 - Usar sanitização automática no logger (filtrar campos `password`, `token`, etc.)
 
 ### Risco 6: Race condition em bloqueio de conta com login simultâneo
+
 **Impacto:** Conta pode ser bloqueada/desbloqueada incorretamente
 **Mitigação:**
+
 - Usar transações no banco ao incrementar `loginAttempts` e verificar lockout
 - Adicionar lock pessimista (`FOR UPDATE`) ao ler usuário para validação
+
+### Risco 7: Divergência entre PRD e implementação inicial
+
+**Impacto:** PRD menciona bloquear conta via `isActive: false`, mas código atual usa apenas `lockedUntil`
+**Mitigação:**
+
+- Passo 7 atualiza AMBOS os campos: `lockedUntil` (timer de desbloqueio) e `isLocked: true` (bloqueia conta)
+- No desbloqueio automático, setar `isLocked: false` novamente (desbloqueia conta)
+- Testes E2E devem validar que `isLocked` é atualizado corretamente
 
 ## 5) Definition of Done (checklist)
 
 - [ ] **Database:**
   - [ ] Migration V3 aplicada com sucesso
   - [ ] Tabelas `Organization`, `LoginAttempt` criadas
-  - [ ] Campos `organizationId`, `loginAttempts`, `lockedUntil` adicionados em `User`
+  - [ ] Campos `organizationId`, `loginAttempts`, `lockedUntil`, `isLocked` adicionados em `User`
   - [ ] Prisma schema sincronizado e client gerado
 
 - [ ] **Email Service:**
@@ -1294,6 +1676,8 @@ open http://localhost:3000/api
 
 - [ ] **Bloqueio de Conta:**
   - [ ] Conta bloqueada após 5 tentativas falhas em 15min
+  - [ ] Campo `isLocked` setado para `true` ao bloquear
+  - [ ] Campo `isLocked` setado para `false` ao desbloquear
   - [ ] Email de notificação enviado
   - [ ] Desbloqueio automático após 30min
   - [ ] Login bloqueado retorna mensagem clara
@@ -1301,6 +1685,7 @@ open http://localhost:3000/api
 - [ ] **Multi-tenancy:**
   - [ ] Modelo `Organization` criado
   - [ ] Signup exige `organizationId` (exceto SUPER_ADMIN)
+  - [ ] Signup valida senha forte (mín 8 chars, 1 letra, 1 número, 1 especial)
   - [ ] `OrganizationGuard` bloqueia acesso cross-org
   - [ ] SUPER_ADMIN tem acesso global
   - [ ] Seed script cria SUPER_ADMIN e org inicial
@@ -1335,19 +1720,23 @@ open http://localhost:3000/api
 ### Perguntas:
 
 **Q1:** Como notificar SUPER_ADMIN quando usuário específico é bloqueado repetidamente?
-**A (assunção):** Implementar contador de bloqueios no modelo User. Se bloqueado > 3x em 24h, enviar email para SUPER_ADMIN. Implementar em fase futura se necessário.
+**A (assunção):
+** Implementar contador de bloqueios no modelo User. Se bloqueado > 3x em 24h, enviar email para SUPER_ADMIN. Implementar em fase futura se necessário.
 
 **Q2:** Como lidar com usuário que esqueceu email usado no cadastro?
 **A (assunção):** Fora de escopo desta versão. Usuário deve contatar suporte.
 
 **Q3:** SUPER_ADMIN pode desbloquear conta manualmente?
-**A (assunção):** Sim, via endpoint `PATCH /v1/users/:id/unlock` (protegido com `RolesGuard(SUPER_ADMIN)`). Implementar no módulo `user`, não no `auth`.
+**A (assunção):** Sim, via endpoint `PATCH /v1/users/:id/unlock` (protegido com
+`RolesGuard(SUPER_ADMIN)`). Implementar no módulo `user`, não no `auth`.
 
 **Q4:** Como lidar com mudança de organização de um usuário?
-**A (assunção):** SUPER_ADMIN pode atualizar `organizationId` via `PATCH /v1/users/:id`. Invalidar todos os refresh tokens ao mudar organização (evitar acesso com token antigo).
+**A (assunção):** SUPER_ADMIN pode atualizar `organizationId` via
+`PATCH /v1/users/:id`. Invalidar todos os refresh tokens ao mudar organização (evitar acesso com token antigo).
 
 **Q5:** Como testar emails em ambiente de desenvolvimento sem SMTP real?
-**A (assunção):** Usar Mailtrap (https://mailtrap.io) ou flag `SKIP_EMAIL=true` que faz EmailService apenas logar sem enviar.
+**A (assunção):** Usar Mailtrap (https://mailtrap.io) ou flag
+`SKIP_EMAIL=true` que faz EmailService apenas logar sem enviar.
 
 ### Assunções confirmadas do PRD:
 
