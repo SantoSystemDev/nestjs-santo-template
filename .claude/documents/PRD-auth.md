@@ -76,10 +76,11 @@ Usuários não conseguem gerenciar múltiplos dispositivos, recuperar senhas esq
 
 2. **Login:**
    - Apenas usuários com `emailVerified: true` podem fazer login
-   - Apenas usuários com `isActive: true` podem fazer login
+   - Apenas usuários com `isActive: true` podem fazer login (controle administrativo)
+   - Apenas usuários com `isLocked: false` podem fazer login (bloqueio por tentativas falhas)
    - Retornar access token (curta duração: 15min) e refresh token (longa duração: 7 dias) em httpOnly cookies
    - Registrar tentativa de login (sucesso/falha) com IP, user-agent, timestamp
-   - Se 5 tentativas falhas consecutivas em 15min: bloquear conta (`isActive: false`), enviar email de notificação
+   - Se 5 tentativas falhas consecutivas em 15min: bloquear conta (`isLocked: true`, `lockedUntil`), enviar email de notificação
 
 3. **Refresh Token:**
    - Refresh token só pode ser usado 1 vez (rotação obrigatória)
@@ -311,7 +312,8 @@ updatedAt: datetime
 ```
 organizationId: uuid (nullable, FK para Organization) // null apenas para `SUPER_ADMIN`
 loginAttempts: int (default: 0)
-lockedUntil: datetime (nullable)
+lockedUntil: datetime (nullable) // timestamp de desbloqueio automático
+isLocked: boolean (default: false) // true = conta bloqueada por tentativas falhas
 ```
 
 #### `RefreshToken` (já existe, garantir campos)
