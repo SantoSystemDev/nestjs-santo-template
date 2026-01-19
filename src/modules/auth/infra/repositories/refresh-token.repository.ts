@@ -109,10 +109,7 @@ export class RefreshTokenRepository implements RefreshTokenRepositoryPort {
   async deleteExpired(): Promise<number> {
     const result = await this.prisma.refreshToken.deleteMany({
       where: {
-        OR: [
-          { expiresAt: { lt: new Date() } },
-          { revokedAt: { not: null } },
-        ],
+        OR: [{ expiresAt: { lt: new Date() } }, { revokedAt: { not: null } }],
       },
     });
 

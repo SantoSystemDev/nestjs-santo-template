@@ -56,7 +56,10 @@ export class EmailService implements EmailServicePort {
     const html = template
       .replace('{{name}}', email.split('@')[0])
       .replace('{{unlockTime}}', this.formatDate(unlockTime))
-      .replace('{{supportEmail}}', process.env.SUPPORT_EMAIL || 'support@example.com');
+      .replace(
+        '{{supportEmail}}',
+        process.env.SUPPORT_EMAIL || 'support@example.com',
+      );
 
     await this.sendEmail({
       to: email,
@@ -70,7 +73,10 @@ export class EmailService implements EmailServicePort {
     const html = template
       .replace('{{name}}', email.split('@')[0])
       .replace('{{changeTime}}', this.formatDate(new Date()))
-      .replace('{{supportEmail}}', process.env.SUPPORT_EMAIL || 'support@example.com');
+      .replace(
+        '{{supportEmail}}',
+        process.env.SUPPORT_EMAIL || 'support@example.com',
+      );
 
     await this.sendEmail({
       to: email,
@@ -100,11 +106,7 @@ export class EmailService implements EmailServicePort {
   }
 
   private loadTemplate(filename: string): string {
-    const templatePath = path.join(
-      __dirname,
-      '../../templates',
-      filename,
-    );
+    const templatePath = path.join(__dirname, '../../templates', filename);
     return fs.readFileSync(templatePath, 'utf-8');
   }
 
