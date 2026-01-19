@@ -20,8 +20,12 @@ export class UserModel {
   readonly phoneNumber?: string;
   readonly isActive: boolean;
   readonly emailVerified: boolean;
-  readonly roles?: RoleModel[] = []; // Lista de roles associadas ao usuário
-  readonly refreshTokens?: string[] = []; // Lista de refresh tokens associados (IDs ou tokens, conforme necessário)
+  readonly organizationId?: string;
+  readonly loginAttempts: number;
+  readonly isLocked: boolean;
+  readonly lockedUntil?: Date | null;
+  readonly roles?: RoleModel[] = [];
+  readonly refreshTokens?: string[] = [];
 
   constructor(data: Partial<UserModel>) {
     Object.assign(this, data);
@@ -53,6 +57,7 @@ export class UserModel {
     roles: string[];
     phoneNumber?: string;
     avatarUrl?: string;
+    organizationId?: string;
   }): UserModel {
     // Validar dados básicos
     this.validateFullName(data.fullName);
@@ -63,6 +68,9 @@ export class UserModel {
       ...data,
       ...normalizeUserData(data),
       isActive: true,
+      emailVerified: false,
+      loginAttempts: 0,
+      isLocked: false,
       roles: data.roles.map(
         (role) => new RoleModel({ name: role as RoleEnum }),
       ),

@@ -5,7 +5,10 @@ export abstract class UserRepositoryPort {
   abstract findByEmail(email: string): Promise<UserModel | null>;
   abstract findById(userId: string): Promise<UserModel | null>;
   abstract create(user: UserModel): Promise<UserModel>;
-  abstract update(user: UserModel): Promise<UserModel>;
+  abstract update(
+    userId: string,
+    data: Partial<UserModel>,
+  ): Promise<UserModel>;
   abstract delete(userId: string): Promise<void>;
   abstract findRoles(userId: string): Promise<RoleEnum[]>;
   abstract findByEmailAndNotId(
