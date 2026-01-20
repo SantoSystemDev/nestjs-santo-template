@@ -23,6 +23,7 @@
       "@auth/*": ["src/modules/auth/*"],
       "@health/*": ["src/modules/health/*"],
       "@user/*": ["src/modules/user/*"],
+      "@organization/*": ["src/modules/organization/*"],
       "@shared/*": ["src/shared/*"],
       "@modules/*": ["src/modules/*"]
     }
