@@ -2,7 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { envValidation } from 'src/config/env.validation';
-import { AuthModule, HealthModule, UserModule } from './modules';
+import {
+  AuthModule,
+  HealthModule,
+  OrganizationModule,
+  UserModule,
+} from './modules';
 
 @Module({
   imports: [
@@ -16,6 +21,7 @@ import { AuthModule, HealthModule, UserModule } from './modules';
     HealthModule,
     UserModule,
     AuthModule,
+    OrganizationModule,
   ],
   controllers: [],
   providers: [],
