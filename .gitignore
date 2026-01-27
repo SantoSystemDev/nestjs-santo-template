@@ -42,6 +42,9 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
+# Cursor MCP configuration (pode conter tokens sensíveis)
+.cursor/*
+
 # temp directory
 .temp
 .tmp
