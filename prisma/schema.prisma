@@ -4,28 +4,27 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fullName        String           @map("full_name") @db.VarChar
-  email           String           @unique @db.VarChar
-  passwordHash    String           @map("password_hash") @db.VarChar
-  avatarUrl       String?          @map("avatar_url") @db.VarChar
-  phoneNumber     String?          @map("phone_number") @db.VarChar
-  isActive        Boolean          @default(true) @map("is_active")
-  emailVerified   Boolean          @default(false) @map("email_verified")
-  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  organizationId  String?          @map("organization_id") @db.Uuid
-  loginAttempts   Int              @default(0) @map("login_attempts")
-  lockedUntil     DateTime?        @map("locked_until") @db.Timestamptz(6)
-  isLocked        Boolean          @default(false) @map("is_locked")
+  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName            String           @map("full_name") @db.VarChar
+  email               String           @unique @db.VarChar
+  passwordHash        String           @map("password_hash") @db.VarChar
+  avatarUrl           String?          @map("avatar_url") @db.VarChar
+  phoneNumber         String?          @map("phone_number") @db.VarChar
+  isActive            Boolean          @default(true) @map("is_active")
+  emailVerified       Boolean          @default(false) @map("email_verified")
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  organizationId      String?          @map("organization_id") @db.Uuid
+  loginAttempts       Int              @default(0) @map("login_attempts")
+  lockedUntil         DateTime?        @map("locked_until") @db.Timestamptz(6)
+  isLocked            Boolean          @default(false) @map("is_locked")
   loginAttemptRecords login_attempts[] @relation("loginAttemptRecords")
-  refreshTokens   RefreshToken[]
-  roles           UserRole[]
-  organization    organizations?   @relation(fields: [organizationId], references: [id], onUpdate: NoAction)
+  refreshTokens       RefreshToken[]
+  roles               UserRole[]
+  organization        organizations?   @relation(fields: [organizationId], references: [id], onUpdate: NoAction)
 
   @@index([email, organizationId], map: "idx_users_email_organization")
   @@index([isLocked, lockedUntil], map: "idx_users_lock_status")
