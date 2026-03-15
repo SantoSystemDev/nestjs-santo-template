@@ -1,32 +1,33 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2022",
+    "target": "ES2023",
+    "types": ["node", "jest"],
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "resolveJsonModule": true,
-    "importsNotUsedAsValues": "remove",
+    "lib": ["ES2023"],
     "paths": {
-      "@auth/*": ["src/modules/auth/*"],
-      "@health/*": ["src/modules/health/*"],
-      "@user/*": ["src/modules/user/*"],
-      "@organization/*": ["src/modules/organization/*"],
-      "@shared/*": ["src/shared/*"],
-      "@modules/*": ["src/modules/*"]
+      "@auth/*": ["./src/auth/*"],
+      "@health/*": ["./src/health/*"],
+      "@users/*": ["./src/users/*"],
+      "@shared/*": ["./src/shared/*"]
     }
-  },
-  "exclude": ["node_modules", "dist"]
+  }
 }
