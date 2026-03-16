@@ -1,120 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fullName            String           @map("full_name") @db.VarChar
-  email               String           @unique @db.VarChar
-  passwordHash        String           @map("password_hash") @db.VarChar
-  avatarUrl           String?          @map("avatar_url") @db.VarChar
-  phoneNumber         String?          @map("phone_number") @db.VarChar
-  isActive            Boolean          @default(true) @map("is_active")
-  emailVerified       Boolean          @default(false) @map("email_verified")
-  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  organizationId      String?          @map("organization_id") @db.Uuid
-  loginAttempts       Int              @default(0) @map("login_attempts")
-  lockedUntil         DateTime?        @map("locked_until") @db.Timestamptz(6)
-  isLocked            Boolean          @default(false) @map("is_locked")
-  loginAttemptRecords login_attempts[] @relation("loginAttemptRecords")
-  refreshTokens       RefreshToken[]
-  roles               UserRole[]
-  organization        organizations?   @relation(fields: [organizationId], references: [id], onUpdate: NoAction)
+model Users {
+  id            String        @id
+  name          String
+  email         String
+  emailVerified Boolean       @default(false)
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  role          String?
+  banned        Boolean?      @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  sessions      Sessions[]
+  accounts      Accounts[]
+  members       Members[]
+  invitations   Invitations[]
 
-  @@index([email, organizationId], map: "idx_users_email_organization")
-  @@index([isLocked, lockedUntil], map: "idx_users_lock_status")
-  @@index([organizationId], map: "idx_users_organization_id")
+  @@unique([email])
   @@map("users")
 }
 
-model UserRole {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  name        String   @db.VarChar
-  description String?  @db.VarChar
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model Sessions {
+  id                   String   @id
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  users                Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy       String?
+  activeOrganizationId String?
 
-  @@unique([userId, name], map: "idx_user_roles_user_name")
-  @@index([userId], map: "idx_user_roles_user_id")
-  @@map("user_roles")
+  @@unique([token])
+  @@index([userId])
+  @@map("sessions")
 }
 
-model RefreshToken {
-  id                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId               String         @map("user_id") @db.Uuid
-  jti                  String         @unique @db.VarChar
-  tokenHash            String         @map("token_hash") @db.VarChar
-  deviceId             String?        @map("device_id") @db.VarChar
-  ipAddress            String?        @map("ip_address") @db.Inet
-  userAgent            String?        @map("user_agent") @db.VarChar
-  expiresAt            DateTime       @map("expires_at") @db.Timestamptz(6)
-  revokedAt            DateTime?      @map("revoked_at") @db.Timestamptz(6)
-  revokedReason        String?        @map("revoked_reason") @db.VarChar
-  replacedByJti        String?        @map("replaced_by_jti") @db.VarChar
-  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  refresh_tokens       RefreshToken?  @relation("refresh_tokensTorefresh_tokens", fields: [replacedByJti], references: [jti], onDelete: NoAction, onUpdate: NoAction, map: "fk_refresh_replaced_by")
-  other_refresh_tokens RefreshToken[] @relation("refresh_tokensTorefresh_tokens")
-  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model Accounts {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  users                 Users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  @@index([replacedByJti], map: "idx_refresh_replaced_by")
-  @@index([tokenHash], map: "idx_refresh_token_hash")
-  @@index([expiresAt], map: "idx_refresh_tokens_expires_at")
-  @@index([revokedAt], map: "idx_refresh_tokens_revoked_at")
-  @@index([userId, expiresAt], map: "idx_refresh_user_expires")
-  @@index([userId, revokedAt], map: "idx_refresh_user_revoked")
-  @@map("refresh_tokens")
+  @@index([userId])
+  @@map("accounts")
 }
 
-model flyway_schema_history {
-  installed_rank Int      @id(map: "flyway_schema_history_pk")
-  version        String?  @db.VarChar(50)
-  description    String   @db.VarChar(200)
-  type           String   @db.VarChar(20)
-  script         String   @db.VarChar(1000)
-  checksum       Int?
-  installed_by   String   @db.VarChar(100)
-  installed_on   DateTime @default(now()) @db.Timestamp(6)
-  execution_time Int
-  success        Boolean
+model Verifications {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@index([success], map: "flyway_schema_history_s_idx")
+  @@index([identifier])
+  @@map("verifications")
 }
 
-model login_attempts {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email         String   @db.VarChar(255)
-  userId        String?  @map("user_id") @db.Uuid
-  ipAddress     String   @map("ip_address") @db.VarChar(45)
-  userAgent     String?  @map("user_agent")
-  success       Boolean
-  failureReason String?  @map("failure_reason") @db.VarChar(255)
-  timestamp     DateTime @default(now()) @db.Timestamptz(6)
-  user          User?    @relation("loginAttemptRecords", fields: [userId], references: [id], onUpdate: NoAction)
+model Organizations {
+  id          String        @id
+  name        String
+  slug        String
+  logo        String?
+  createdAt   DateTime
+  metadata    String?
+  members     Members[]
+  invitations Invitations[]
 
-  @@index([email, timestamp], map: "idx_login_attempts_email_timestamp")
-  @@index([ipAddress, timestamp], map: "idx_login_attempts_ip_timestamp")
-  @@index([timestamp], map: "idx_login_attempts_timestamp")
-  @@index([userId, timestamp], map: "idx_login_attempts_user_timestamp")
-  @@map("login_attempts")
-}
-
-model organizations {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String   @db.VarChar(255)
-  slug      String   @unique @db.VarChar(100)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
-  users     User[]
-
-  @@index([isActive], map: "idx_organizations_is_active")
+  @@unique([slug])
   @@map("organizations")
+}
+
+model Members {
+  id             String        @id
+  organizationId String
+  organizations  Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  users          Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String        @default("member")
+  createdAt      DateTime
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("members")
+}
+
+model Invitations {
+  id             String        @id
+  organizationId String
+  organizations  Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String        @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime      @default(now())
+  inviterId      String
+  users          Users         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitations")
 }

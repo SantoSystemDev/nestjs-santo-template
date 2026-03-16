@@ -24,10 +24,7 @@
     "noFallthroughCasesInSwitch": false,
     "lib": ["ES2023"],
     "paths": {
-      "@auth/*": ["./src/auth/*"],
-      "@health/*": ["./src/health/*"],
-      "@users/*": ["./src/users/*"],
-      "@shared/*": ["./src/shared/*"]
+      "@/*": ["./src/*"]
     }
   }
 }

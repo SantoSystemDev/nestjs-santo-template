@@ -36,6 +36,18 @@ async function bootstrap() {
         urls: [{ url: '/docs-json', name: 'Santo Template API (gerada)' }],
       },
     });
+
+    // app.use(
+    //   '/auth',
+    //   apiReference({
+    //     pageTitle: 'API Documentation',
+    //     sources: [
+    //       { url: '/api/open-api', title: 'API' },
+    //       // Better Auth schema generation endpoint
+    //       { url: '/api/auth/open-api/generate-schema', title: 'Auth' },
+    //     ],
+    //   }),
+    // );
   }
 
   await app.listen(process.env.PORT ?? 3000);
