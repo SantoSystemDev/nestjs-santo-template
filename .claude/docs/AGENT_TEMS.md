@@ -401,31 +401,26 @@ Ao final, documentem: causa raiz identificada, evidências e solução recomenda
 ```text
 Crie um time de design para planejar a feature: [DESCRIÇÃO DA FEATURE].
 Nenhum código deve ser escrito — apenas o plano de implementação.
+Caso o plano envolva múltiplos arquivos ou camadas, divida em tarefas claras e independentes.
 
 Crie um time de 3 especialistas que colaboram para produzir um plano completo.
 
 Specialist 1 — Designer de API e Dados:
-Você é especialista em NestJS 11, Prisma 7 e design de APIs RESTful.
+Você é especialista em NestJS 11+, Prisma 7+ e design de APIs RESTful.
 Use src/users/ e src/health/ como referência de padrão do projeto.
-Defina: endpoints (method + path + quem pode acessar), DTOs de request/response
-com regras de class-validator, queries Prisma necessárias (models e relacionamentos via prisma.schema),
-e estrutura completa de arquivos do módulo (module/controller/service/dtos/specs).
+Defina: endpoints (method + path + quem pode acessar), DTOs de request/response com regras de class-validator, queries Prisma necessárias (models e relacionamentos via prisma.schema), e estrutura completa de arquivos do módulo (module,controllers,services,dtos,specs).
 
 Specialist 2 — Especialista em Segurança e Autorização:
-Você é especialista em better-auth 1.5 e @thallesp/nestjs-better-auth.
+Você é especialista em better-auth 1.5+ e @thallesp/nestjs-better-auth.
 Para cada endpoint proposto pelo Specialist 1, defina: qual decorator de auth usar
-(@AllowAnonymous, @OrgRoles, ou guard implícito), se há risco de IDOR e como prevenir,
-quais campos não devem aparecer no DTO de response, e edge cases de autorização
-(null activeOrganizationId, self-access vs org-access, role global vs role de org).
+(@AllowAnonymous, @OrgRoles, ou guard implícito), se há risco de IDOR e como prevenir, quais campos não devem aparecer no DTO de response, e edge cases de autorização (null activeOrganizationId, self-access vs org-access, role global vs role de org).
 
 Specialist 3 — Arquiteto de Testes:
-Você é especialista em @nestjs/testing 11 e Jest 30.
-Para cada endpoint definido, liste os casos de teste: happy path, erros de validação,
-erros de autorização (ForbiddenException), não encontrado (NotFoundException), edge cases.
-Defina a estratégia de mock para controller.spec (mock de service) e service.spec (mock de PrismaService).
+Você é especialista em @nestjs/testing 11+, Jest 30+ e supertest 7+.
+Para cada endpoint definido, liste os casos de teste: happy path, erros de validação, erros de autorização (ForbiddenException), não encontrado (NotFoundException), edge cases.
+Defina a estratégia de mock para controller.spec (mock de service) e service.spec (ex: mock de PrismaService).
 
-Ao final, o líder consolida tudo em um plano no mesmo formato de .claude/plans/2_BETTER_AUTH_SETUP.md
-e salva em .claude/plans/[NOME_DA_FEATURE].md
+- Ao final, o líder consolida tudo em um plano com seções claras para cada especialista e salva em .claude/plans/[NOME_DA_FEATURE].md, criando no final do arquivo um checklist de implementação ordenado.
 ```
 
 ---
