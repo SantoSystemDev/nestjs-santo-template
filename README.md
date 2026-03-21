@@ -48,30 +48,28 @@ Copie o arquivo `.env.example` para `.env` e preencha os valores:
 
 ```bash
 cp .env.example .env
+# ou
+make setup
 ```
 
-### 2. Suba os containers
-
-```bash
-docker compose up -d --build
-```
-
-Isso inicia o **PostgreSQL 17**.
-
-### 3. Instale as dependências e gere o Prisma Client
+### 2. Setup completo (recomendado)
 
 ```bash
 npm install
-npx prisma generate
+make start
 ```
 
-### 4. Inicie a aplicação em modo desenvolvimento
-
-```bash
-npm run start:dev
-```
+O `make start` sobe o PostgreSQL via Docker Compose, gera o Prisma Client e inicia a aplicação em modo desenvolvimento — tudo em um único comando.
 
 A aplicação estará disponível em `http://localhost:3000`.
+
+### Setup manual
+
+```bash
+docker compose up -d --build
+npx prisma generate
+npm run start:dev
+```
 
 ## Variáveis de ambiente
 
@@ -86,20 +84,25 @@ A aplicação estará disponível em `http://localhost:3000`.
 
 ## Comandos disponíveis
 
+O projeto tem um `Makefile` com os principais atalhos. Para ver todos os targets disponíveis:
+
 ```bash
-# Desenvolvimento com hot-reload
-npm run start:dev
-
-# Build de produção
-npm run build
-
-# Executar build de produção
-npm run start:prod
-
-# Lint e formatação
-npm run format
-npm run lint
+make help
 ```
+
+Os mais usados:
+
+| Comando          | Descrição                                          |
+| ---------------- | -------------------------------------------------- |
+| `make start`     | Setup completo (Docker + Prisma) e `start:dev`     |
+| `make build`     | Build de produção                                  |
+| `make test`      | Testes unitários e e2e                             |
+| `make cov`       | Testes unitários com coverage                      |
+| `make lint`      | Format + lint                                      |
+| `make db-setup`  | Sobe Docker e gera Prisma Client                   |
+| `make db-studio` | Abre o Prisma Studio                               |
+| `make logs`      | Acompanha os logs do container do banco            |
+| `make clean`     | Para os containers e remove volumes (apaga dados!) |
 
 ## Migrations
 

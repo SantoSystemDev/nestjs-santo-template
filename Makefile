@@ -137,7 +137,7 @@ reset: down up ##@DOCKER Restart Docker containers
 .PHONY: clean
 clean: ##@DOCKER Stop containers and remove volumes
 	@echo "$(CYAN)[CLEAN]$(RESET) Cleaning up containers and volumes..."
-	@$(DC) down -v
+	@$(DC) down -v --remove-orphans
 	@echo "$(GREEN)[OK]$(RESET) Clean up complete!"
 
 .PHONY: logs
