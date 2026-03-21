@@ -59,9 +59,11 @@ build: ##@NESTJS Build the application
 	@echo "$(GREEN)[OK]$(RESET) Build complete!"
 
 .PHONY: test
-test: ##@NESTJS Run unit tests
+test: ##@NESTJS Run unit tests and E2E tests (Supertest)
 	@echo "$(CYAN)[TEST]$(RESET) Running unit tests..."
 	@npm run test
+	@echo "$(CYAN)[E2E]$(RESET) Running e2e tests..."
+	@npm run test:e2e
 
 .PHONY: cov
 cov: ##@NESTJS Run unit tests with coverage
@@ -74,13 +76,8 @@ lint: ##@NESTJS Run formatting and linting
 	@npm run format && npm run lint
 	@echo "$(GREEN)[OK]$(RESET) Linting and formatting complete!"
 
-.PHONY: e2e
-e2e: ##@NESTJS Run E2E tests (Supertest)
-	@echo "$(CYAN)[E2E]$(RESET) Running e2e tests..."
-	@npm run test:e2e
-
 ###################################################################################################
-## DATABASE / PRISMA / FLYWAY
+## DATABASE / PRISMA
 ###################################################################################################
 
 .PHONY: db-gen
@@ -101,33 +98,14 @@ db-pull: ##@PRISMA Pull DB schema into Prisma (keeps Prisma as client-only)
 	@echo "$(GREEN)[OK]$(RESET) Prisma schema updated from DB!"
 
 .PHONY: db-diff
-db-diff: ##@PRISMA Diff DB vs schema.prisma and print SQL (for Flyway drafts)
+db-diff: ##@PRISMA Diff DB vs schema.prisma and print SQL
 	@echo "$(CYAN)[PRISMA]$(RESET) Generating SQL diff (from DB -> schema.prisma)..."
 	@test -n "$$DATABASE_URL" || (echo "$(RED)DATABASE_URL is not set$(RESET)"; exit 1)
-	@npx prisma migrate diff --from-url "$${DATABASE_URL}" --to-schema-datamodel ./prisma/schema.prisma --script | tee /tmp/flyway_draft.sql
-	@echo "$(YELLOW)[INFO]$(RESET) Draft saved to /tmp/flyway_draft.sql (copy to flyway/sql/VX__*.sql)"
-
-.PHONY: db-migrate
-db-migrate: ##@FLYWAY Apply Flyway migrations (docker run)
-	@echo "$(CYAN)[FLYWAY]$(RESET) Migrating..."
-	@npm run db:migrate
-	@echo "$(GREEN)[OK]$(RESET) Flyway migrations applied!"
-
-.PHONY: db-info
-db-info: ##@FLYWAY Show Flyway info
-	@$(DC) run --rm flyway -configFiles=/flyway/conf/flyway.conf info
-
-.PHONY: db-validate
-db-validate: ##@FLYWAY Validate Flyway migrations
-	@$(DC) run --rm flyway -configFiles=/flyway/conf/flyway.conf validate
-
-.PHONY: db-clean
-db-clean: ##@FLYWAY Clean database schema (DANGER: drops all objects)
-	@echo "$(RED)[WARNING]$(RESET) This will drop all database objects!"
-	@$(DC) run --rm flyway -configFiles=/flyway/conf/flyway.conf clean
+	@npx prisma migrate diff --from-url "$${DATABASE_URL}" --to-schema-datamodel ./prisma/schema.prisma --script
+	@echo "$(GREEN)[OK]$(RESET) SQL diff printed above."
 
 .PHONY: db-setup
-db-setup: up db-migrate db-gen ##@DATABASE Full database setup: Docker + Flyway + Prisma
+db-setup: up db-gen ##@DATABASE Full database setup: Docker + Prisma
 	@echo "$(GREEN)[OK]$(RESET) Database setup complete!"
 
 .PHONY: db-seed
@@ -165,7 +143,7 @@ clean: ##@DOCKER Stop containers and remove volumes
 .PHONY: logs
 logs: ##@DOCKER View Docker container logs
 	@echo "$(CYAN)[LOGS]$(RESET) Fetching container logs..."
-	@$(DC) logs -f database flyway
+	@$(DC) logs -f database
 	@echo "$(GREEN)[OK]$(RESET) Logs fetched!"
 
 ###################################################################################################

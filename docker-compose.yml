@@ -16,22 +16,5 @@ services:
       timeout: 5s
       retries: 10
 
-  flyway:
-    image: flyway/flyway:11
-    container_name: flyway_app
-    command: ['-configFiles=/flyway/conf/flyway.conf', 'migrate']
-    volumes:
-      - ./flyway/conf:/flyway/conf # Config files
-      - ./flyway/migrations:/flyway/migrations # Migration files
-      - flyway_data:/flyway/data # Volume persistente para dados
-    environment:
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_NAME=${DATABASE_NAME}
-    depends_on:
-      database:
-        condition: service_healthy
-
 volumes:
   database_data:
-  flyway_data:
