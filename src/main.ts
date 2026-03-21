@@ -20,9 +20,9 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Santo Template API')
+      .setTitle('Auth Template API')
       .setDescription(
-        'Documentação interativa dos endpoints da Santo Template API.',
+        'Documentação interativa dos endpoints da Auth Template API.',
       )
       .setVersion(version)
       .addBearerAuth()
@@ -33,7 +33,7 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document, {
       swaggerOptions: {
         persistAuthorization: true,
-        urls: [{ url: '/docs-json', name: 'Santo Template API (gerada)' }],
+        urls: [{ url: '/docs-json', name: 'Auth Template API (gerada)' }],
       },
     });
 

@@ -1,4 +1,4 @@
-# nestjs-santo-template
+# nestjs-auth-template
 
 Template backend moderno com NestJS, Prisma, Docker e arquitetura Hexagonal.
 

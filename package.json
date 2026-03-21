@@ -1,7 +1,7 @@
 {
-  "name": "nestjs-santo-template",
+  "name": "nestjs-auth-template",
   "version": "1.1.0",
-  "description": "NestJS template for Santo",
+  "description": "NestJS template for Auth",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -28,6 +28,7 @@
     "@nestjs/terminus": "^11.1.1",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "@thallesp/nestjs-better-auth": "^2.5.1",
     "better-auth": "^1.5.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
