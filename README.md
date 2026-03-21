@@ -143,6 +143,8 @@ O projeto segue a arquitetura modular do NestJS, com separação por responsabil
 
 ```
 src/
+├── shared/
+│   └── dtos/        # DTOs globais reutilizáveis (paginação, etc.)
 ├── health/          # Módulo de health check (Terminus)
 ├── generated/       # Prisma Client gerado (não editar manualmente)
 └── main.ts          # Bootstrap da aplicação
@@ -151,8 +153,47 @@ src/
 **Convenções:**
 
 - Cada feature é encapsulada em um **module** NestJS com seus controllers, services e providers
-- Validação de entrada via `class-validator` e `class-transformer` com `ValidationPipe` global
-- Transformação automática de query params por tipo TypeScript
+- Validação de entrada via `class-validator` e `class-transformer` com `ValidationPipe` global:
+  - `whitelist: true` — campos não declarados no DTO são ignorados silenciosamente
+  - `transform: true` — habilita conversão automática de tipos via `class-transformer`
+  - `enableImplicitConversion: true` — converte query params pelo tipo TypeScript (ex: `"1"` → `number`)
+
+## DTOs compartilhados
+
+Em `src/shared/dtos/` ficam os DTOs reutilizáveis entre módulos.
+
+### Paginação
+
+`PaginationQueryDto` — query params padrão para listagens:
+
+```
+GET /recursos?page=1&size=20&orderBy=createdAt&direction=desc
+GET /recursos?page=1&size=20&orderBy=name&orderBy=createdAt&direction=asc&direction=desc
+```
+
+`PaginatedResponseDto<T>` — envelope padrão de resposta paginada:
+
+```json
+{
+  "content": [],
+  "currentPage": 1,
+  "totalItemsPerPage": 20,
+  "totalItems": 100,
+  "totalPages": 5
+}
+```
+
+Para adicionar filtros específicos ao módulo, estenda `PaginationQueryDto`:
+
+```typescript
+import { PaginationQueryDto } from '../shared/dtos';
+
+export class ListUsersQueryDto extends PaginationQueryDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+}
+```
 
 ## Autenticação
 
