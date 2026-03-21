@@ -186,7 +186,7 @@ GET /recursos?page=1&size=20&orderBy=name&orderBy=createdAt&direction=asc&direct
 Para adicionar filtros específicos ao módulo, estenda `PaginationQueryDto`:
 
 ```typescript
-import { PaginationQueryDto } from '../shared/dtos';
+import { PaginationQueryDto } from '@/shared/dtos';
 
 export class ListUsersQueryDto extends PaginationQueryDto {
   @IsOptional()
