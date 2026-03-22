@@ -14,6 +14,7 @@ Template backend moderno com NestJS, Prisma, Docker e autenticação via better-
 - [Testes](#testes)
 - [Arquitetura](#arquitetura)
 - [Autenticação](#autenticação)
+- [Endpoints da API](#endpoints-da-api)
 - [Documentação da API](#documentação-da-api)
 - [Health Check](#health-check)
 
@@ -143,11 +144,20 @@ O projeto segue a arquitetura modular do NestJS, com separação por responsabil
 
 ```
 src/
+├── auth/
+│   └── types/       # Re-exports de tipos do better-auth (UserSession)
+├── health/          # Módulo de health check (Terminus + Prisma)
+├── lib/
+│   └── auth.ts      # Instância do better-auth (PrismaClient direto, fora da DI)
+├── organizations/   # Módulo de organizações (org ativa, membros, convites)
+│   └── dtos/
+├── prisma/          # PrismaModule global + PrismaService
 ├── shared/
 │   └── dtos/        # DTOs globais reutilizáveis (paginação, etc.)
-├── health/          # Módulo de health check (Terminus)
+├── users/           # Módulo de usuários (perfil, listagem, acesso por ID)
+│   └── dtos/
 ├── generated/       # Prisma Client gerado (não editar manualmente)
-└── main.ts          # Bootstrap da aplicação
+└── main.ts          # Bootstrap da aplicação (bodyParser: false)
 ```
 
 **Convenções:**
@@ -206,7 +216,42 @@ Recursos incluídos no schema:
 - **Organizations**, **Members** e **Invitations** — multi-tenancy por organização
 - **Verifications** — verificação de e-mail e outros fluxos
 
-As rotas de autenticação são expostas automaticamente pelo better-auth. Consulte a [documentação do better-auth](https://better-auth.com) para detalhes sobre os endpoints disponíveis.
+As rotas de autenticação são expostas automaticamente pelo better-auth em `/api/auth/**`. Consulte a [documentação do better-auth](https://better-auth.com) para detalhes sobre os endpoints disponíveis.
+
+### Guard global (deny-by-default)
+
+`AuthModule.forRoot({ auth })` registra um `AuthGuard` global — todas as rotas exigem sessão autenticada, exceto as marcadas explicitamente.
+
+### Decorators disponíveis
+
+Todos importados de `@thallesp/nestjs-better-auth`:
+
+| Decorator | Uso |
+|---|---|
+| `@AllowAnonymous()` | Rota pública (bypassa o guard) |
+| `@OptionalAuth()` | Sessão opcional |
+| `@Roles(['admin'])` | Role global (plugin admin) |
+| `@OrgRoles(['owner', 'admin'])` | Role na organização ativa |
+| `@Session()` | Param decorator — injeta `{ session, user }` |
+
+## Endpoints da API
+
+### Users (`/users`)
+
+| Método | Path | Acesso | Descrição |
+|--------|------|--------|-----------|
+| GET | `/users/me` | Qualquer autenticado | Retorna perfil do usuário da sessão |
+| PATCH | `/users/me` | Qualquer autenticado | Atualiza `name` e/ou `image` do próprio perfil |
+| GET | `/users` | `@OrgRoles(['admin', 'owner'])` | Lista membros da organização ativa (paginado) |
+| GET | `/users/:id` | Qualquer autenticado + lógica no service | Self ou org admin/owner da mesma org |
+
+### Organizations (`/organizations`)
+
+| Método | Path | Acesso | Descrição |
+|--------|------|--------|-----------|
+| GET | `/organizations/me` | Qualquer autenticado | Retorna organização ativa + role do usuário |
+| GET | `/organizations/:id/members` | `@OrgRoles(['owner', 'admin'])` | Lista membros da org (paginado) |
+| POST | `/organizations/:id/invitations` | `@OrgRoles(['owner', 'admin'])` | Convida membro por email |
 
 ## Documentação da API
 
@@ -226,8 +271,9 @@ Endpoint de saúde da aplicação:
 GET /health
 ```
 
-Verifica os seguintes indicadores:
+Esta rota é pública (`@AllowAnonymous()`). Verifica os seguintes indicadores:
 
+- **database** — conectividade com o PostgreSQL via `SELECT 1`
 - **memory_heap** — uso de heap abaixo de 150 MB
 - **storage** — uso de disco abaixo de 90%
 
