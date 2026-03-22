@@ -215,10 +215,10 @@ Clean up the team.
 
 ### Time 1 — Integrar o Better-Auth ao NestJS
 
-**Quando usar:** Executar o plano `.claude/plans/2_BETTER_AUTH_SETUP.md`.
+**Quando usar:** Executar o plano `.claude/plans/BETTER_AUTH_SETUP.md`.
 
 ```text
-Leia o plano em .claude/plans/2_BETTER_AUTH_SETUP.md completamente antes de criar o time.
+Leia o plano em .claude/plans/BETTER_AUTH_SETUP.md completamente antes de criar o time.
 
 Crie um time de 3 teammates para executar o plano em paralelo.
 Nenhum teammate edita o mesmo arquivo que outro — confirme isso antes de começar.
