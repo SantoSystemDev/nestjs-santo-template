@@ -83,13 +83,13 @@ lint: ##@NESTJS Run formatting and linting
 .PHONY: db-gen
 db-gen: ##@PRISMA Generate Prisma client
 	@echo "$(CYAN)[PRISMA]$(RESET) Generating Prisma client..."
-	@npm run db:generate
+	@npx prisma generate
 	@echo "$(GREEN)[OK]$(RESET) Prisma client generated!"
 
 .PHONY: db-studio
 db-studio: ##@PRISMA Open Prisma Studio
 	@echo "$(CYAN)[PRISMA]$(RESET) Opening Prisma Studio..."
-	@npm run db:studio
+	@npx prisma studio
 
 .PHONY: db-pull
 db-pull: ##@PRISMA Pull DB schema into Prisma (keeps Prisma as client-only)
@@ -104,14 +104,20 @@ db-diff: ##@PRISMA Diff DB vs schema.prisma and print SQL
 	@npx prisma migrate diff --from-url "$${DATABASE_URL}" --to-schema-datamodel ./prisma/schema.prisma --script
 	@echo "$(GREEN)[OK]$(RESET) SQL diff printed above."
 
+.PHONY: auth-gen
+auth-gen: ##@PRISMA Generate better-auth schema into Prisma
+	@echo "$(CYAN)[AUTH]$(RESET) Generating better-auth schema..."
+	@npx @better-auth/cli generate --config ./src/lib/auth.ts
+	@echo "$(GREEN)[OK]$(RESET) better-auth schema generated! Run 'make db-gen' to regenerate Prisma client."
+
 .PHONY: db-setup
-db-setup: up db-gen ##@DATABASE Full database setup: Docker + Prisma
+db-setup: up auth-gen db-gen ##@DATABASE Full database setup: Docker + Prisma
 	@echo "$(GREEN)[OK]$(RESET) Database setup complete!"
 
 .PHONY: db-seed
 db-seed: ##@DATABASE Seed database with initial data (custom script)
 	@echo "$(CYAN)[SEED]$(RESET) Seeding database with initial data..."
-	@npm run db:seed
+	@npx prisma db seed
 	@echo "$(GREEN)[OK]$(RESET) Database seeded!"
 
 ###################################################################################################

@@ -24,18 +24,20 @@ npm run test:cov                # coverage
 # Lint & Format
 npm run format && npm run lint  # or: make lint
 
-# Database
-npm run db:generate             # regenerate Prisma Client after schema changes
-npm run db:studio               # open Prisma Studio
-npx prisma db pull              # pull DB schema into Prisma
+# Database (all via Makefile)
+make db-gen                     # regenerate Prisma Client after schema changes
+make db-studio                  # open Prisma Studio
+make db-pull                    # pull DB schema into Prisma
 make db-diff                    # SQL diff between DB and schema.prisma
+make db-seed                    # seed database with initial data
+make auth-gen                   # generate better-auth schema into Prisma
 ```
 
 ## Architecture
 
 - **Module-per-feature**: each feature has its own NestJS module with controller, service, and DTOs
 - **PrismaModule** (`src/prisma/`): `@Global()` module — available everywhere, no need to import per-module
-- **Prisma Client** is generated to `src/generated/prisma/` — never edit manually; regenerate with `npm run db:generate`
+- **Prisma Client** is generated to `src/generated/prisma/` — never edit manually; regenerate with `make db-gen`
 - **Prisma schema** uses plural model names (e.g., `Users`, `Sessions`) with `@@map` to lowercase table names. The `usePlural: true` option is set in better-auth's prisma adapter
 - **better-auth** instance lives in `src/lib/auth.ts` outside NestJS DI (uses its own raw PrismaClient with `@prisma/adapter-pg`). Integrated via `AuthModule.forRoot({ auth })` which registers a global deny-by-default guard
 - **Shared DTOs** in `src/shared/dtos/` — `PaginationQueryDto` and `PaginatedResponseDto<T>` for consistent pagination across modules. Extend `PaginationQueryDto` for module-specific filters
