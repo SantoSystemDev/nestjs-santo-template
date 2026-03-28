@@ -39,11 +39,20 @@ make down                       # stop Docker containers
 make reset                      # restart Docker containers
 make clean                      # stop containers and remove volumes
 make logs                       # tail database container logs
+
+# Utilities
+make setup                      # initialize .env from .env.example
+make audit                      # run npm audit and fix vulnerabilities
+make outdated                   # check for outdated dependencies
+make update                     # update dependencies to latest compatible
+make keys                       # generate RSA key pair for JWT (Unix/Git Bash)
+make totp-key                   # generate random 32 bytes Base64 for TOTP (Unix/Git Bash)
 ```
 
 ## Architecture
 
 - **Module-per-feature**: each feature has its own NestJS module with controller, service, and DTOs
+- **Existing modules**: `auth/` (better-auth integration + types), `users/`, `organizations/`, `health/` (health check endpoint), `prisma/` (global), `shared/` (shared DTOs)
 - **PrismaModule** (`src/prisma/`): `@Global()` module — available everywhere, no need to import per-module
 - **Prisma Client** is generated to `src/generated/prisma/` — never edit manually; regenerate with `make db-gen`
 - **Prisma schema** uses plural model names (e.g., `Users`, `Sessions`) with `@@map` to lowercase table names. The `usePlural: true` option is set in better-auth's prisma adapter
@@ -57,7 +66,7 @@ make logs                       # tail database container logs
 
 - **Auth decorators** (from `@thallesp/nestjs-better-auth`): `@AllowAnonymous()`, `@OptionalAuth()`, `@Roles([...])`, `@OrgRoles([...])`, `@Session()`
 - **Validation**: global `ValidationPipe` with `whitelist: true`, `transform: true`, `enableImplicitConversion: true`
-- **Path alias**: `@/*` maps to `src/*` (configured in tsconfig `paths`). Note: Jest does not have `moduleNameMapper` configured — tests using `@/*` imports may need it added
+- **Path alias**: `@/*` maps to `src/*` (configured in tsconfig `paths`). Note: Jest config is inline in `package.json` and does not have `moduleNameMapper` — tests using `@/*` imports may need it added
 - **TypeScript**: target ES2023, module resolution `nodenext`, `strictNullChecks: true`
 - **Tests**: `.spec.ts` files colocated with source code; e2e tests in `test/`. Coverage excludes modules, DTOs, enums, interfaces, and `main.ts`
 - **Style**: single quotes, trailing commas, LF line endings (Prettier). ESLint flat config with `prettier/prettier: error`
