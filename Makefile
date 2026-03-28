@@ -107,7 +107,7 @@ db-diff: ##@PRISMA Diff DB vs schema.prisma and print SQL
 .PHONY: auth-gen
 auth-gen: ##@PRISMA Generate better-auth schema into Prisma
 	@echo "$(CYAN)[AUTH]$(RESET) Generating better-auth schema..."
-	@npx @better-auth/cli generate --config ./src/lib/auth.ts
+	@npx auth@latest generate --config ./src/lib/auth.ts
 	@echo "$(GREEN)[OK]$(RESET) better-auth schema generated! Run 'make db-gen' to regenerate Prisma client."
 
 .PHONY: db-setup
