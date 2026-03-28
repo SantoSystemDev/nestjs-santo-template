@@ -30,7 +30,15 @@ make db-studio                  # open Prisma Studio
 make db-pull                    # pull DB schema into Prisma
 make db-diff                    # SQL diff between DB and schema.prisma
 make db-seed                    # seed database with initial data
+make db-setup                   # full setup: Docker + auth-gen + db-gen
 make auth-gen                   # generate better-auth schema into Prisma
+
+# Docker
+make up                         # start Docker containers (detached)
+make down                       # stop Docker containers
+make reset                      # restart Docker containers
+make clean                      # stop containers and remove volumes
+make logs                       # tail database container logs
 ```
 
 ## Architecture
@@ -48,11 +56,16 @@ make auth-gen                   # generate better-auth schema into Prisma
 
 - **Auth decorators** (from `@thallesp/nestjs-better-auth`): `@AllowAnonymous()`, `@OptionalAuth()`, `@Roles([...])`, `@OrgRoles([...])`, `@Session()`
 - **Validation**: global `ValidationPipe` with `whitelist: true`, `transform: true`, `enableImplicitConversion: true`
-- **Path alias**: `@/*` maps to `src/*` (configured in tsconfig and Jest `moduleNameMapper`)
+- **Path alias**: `@/*` maps to `src/*` (configured in tsconfig `paths`). Note: Jest does not have `moduleNameMapper` configured — tests using `@/*` imports may need it added
 - **TypeScript**: target ES2023, module resolution `nodenext`, `strictNullChecks: true`
 - **Tests**: `.spec.ts` files colocated with source code; e2e tests in `test/`. Coverage excludes modules, DTOs, enums, interfaces, and `main.ts`
 - **Style**: single quotes, trailing commas, LF line endings (Prettier). ESLint flat config with `prettier/prettier: error`
 
 ## Environment
 
-Requires `.env` with `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`. Copy from `.env.example`. Docker Compose exposes PostgreSQL on port **5433** (not 5432).
+Copy `.env.example` to `.env`. Required variables:
+
+- `DATABASE_URL` — Postgres connection string (port **5433**, not 5432)
+- `BETTER_AUTH_SECRET` — secret for better-auth sessions
+- `BETTER_AUTH_URL` — base URL of the app (e.g., `http://localhost:3000`)
+- `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME` — used by Docker Compose to provision PostgreSQL
