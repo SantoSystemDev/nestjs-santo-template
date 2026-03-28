@@ -40,6 +40,7 @@ make auth-gen                   # generate better-auth schema into Prisma
 - **Prisma Client** is generated to `src/generated/prisma/` — never edit manually; regenerate with `make db-gen`
 - **Prisma schema** uses plural model names (e.g., `Users`, `Sessions`) with `@@map` to lowercase table names. The `usePlural: true` option is set in better-auth's prisma adapter
 - **better-auth** instance lives in `src/lib/auth.ts` outside NestJS DI (uses its own raw PrismaClient with `@prisma/adapter-pg`). Integrated via `AuthModule.forRoot({ auth })` which registers a global deny-by-default guard
+- **Dual Prisma pools (architectural decision)**: the project intentionally uses two PrismaClient instances — `src/lib/prisma.ts` (used exclusively by better-auth) and `PrismaService` (used by NestJS DI). This is necessary because better-auth requires a PrismaClient at import time, before NestJS DI bootstraps. Both connect to the same database and access all tables. Application code should always inject `PrismaService`, never import `src/lib/prisma.ts` directly
 - **Shared DTOs** in `src/shared/dtos/` — `PaginationQueryDto` and `PaginatedResponseDto<T>` for consistent pagination across modules. Extend `PaginationQueryDto` for module-specific filters
 - **Bootstrap** (`src/main.ts`): `bodyParser: false` is required for better-auth compatibility. Swagger available at `/docs` in non-production
 
