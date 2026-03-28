@@ -51,6 +51,7 @@ make logs                       # tail database container logs
 - **Dual Prisma pools (architectural decision)**: the project intentionally uses two PrismaClient instances — `src/lib/prisma.ts` (used exclusively by better-auth) and `PrismaService` (used by NestJS DI). This is necessary because better-auth requires a PrismaClient at import time, before NestJS DI bootstraps. Both connect to the same database and access all tables. Application code should always inject `PrismaService`, never import `src/lib/prisma.ts` directly
 - **Shared DTOs** in `src/shared/dtos/` — `PaginationQueryDto` and `PaginatedResponseDto<T>` for consistent pagination across modules. Extend `PaginationQueryDto` for module-specific filters
 - **Bootstrap** (`src/main.ts`): `bodyParser: false` is required for better-auth compatibility. Swagger available at `/docs` in non-production
+- **Body parsing**: NestJS bodyParser is disabled globally; `AuthModule.forRoot()` re-enables JSON and urlencoded parsing (2mb limit) for non-auth routes only
 
 ## Key Conventions
 
