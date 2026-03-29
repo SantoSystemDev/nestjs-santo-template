@@ -66,7 +66,7 @@ make totp-key                   # generate random 32 bytes Base64 for TOTP (Unix
 
 - **Auth decorators** (from `@thallesp/nestjs-better-auth`): `@AllowAnonymous()`, `@OptionalAuth()`, `@Roles([...])`, `@OrgRoles([...])`, `@Session()`
 - **Validation**: global `ValidationPipe` with `whitelist: true`, `transform: true`, `enableImplicitConversion: true`
-- **Path alias**: `@/*` maps to `src/*` (configured in tsconfig `paths`). Note: Jest config is inline in `package.json` and does not have `moduleNameMapper` — tests using `@/*` imports may need it added
+- **Path alias**: `@/*` maps to `src/*` (configured in tsconfig `paths` and Jest `moduleNameMapper`)
 - **TypeScript**: target ES2023, module resolution `nodenext`, `strictNullChecks: true`
 - **Tests**: `.spec.ts` files colocated with source code; e2e tests in `test/`. Coverage excludes modules, DTOs, enums, interfaces, and `main.ts`
 - **Style**: single quotes, trailing commas, LF line endings (Prettier). ESLint flat config with `prettier/prettier: error`
