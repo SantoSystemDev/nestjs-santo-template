@@ -1,14 +1,26 @@
+jest.mock('@/generated/prisma/client', () => ({
+  PrismaClient: class PrismaClient {},
+}));
+
+jest.mock('@thallesp/nestjs-better-auth', () => ({
+  AllowAnonymous: () => () => {},
+}));
+
 import {
   DiskHealthIndicator,
   HealthCheckService,
   MemoryHealthIndicator,
+  PrismaHealthIndicator,
 } from '@nestjs/terminus';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from '@/prisma/prisma.service';
 import { HealthController } from './health.controller';
 
 const mockHealthCheckService = { check: jest.fn() };
 const mockDiskHealthIndicator = { checkStorage: jest.fn() };
 const mockMemoryHealthIndicator = { checkHeap: jest.fn() };
+const mockPrismaHealthIndicator = { pingCheck: jest.fn() };
+const mockPrismaService = {};
 
 describe('HealthController', () => {
   let controller: HealthController;
@@ -20,6 +32,8 @@ describe('HealthController', () => {
         { provide: HealthCheckService, useValue: mockHealthCheckService },
         { provide: DiskHealthIndicator, useValue: mockDiskHealthIndicator },
         { provide: MemoryHealthIndicator, useValue: mockMemoryHealthIndicator },
+        { provide: PrismaHealthIndicator, useValue: mockPrismaHealthIndicator },
+        { provide: PrismaService, useValue: mockPrismaService },
       ],
     }).compile();
 
@@ -35,9 +49,17 @@ describe('HealthController', () => {
   it('should return health check result when all indicators are up', async () => {
     mockHealthCheckService.check.mockResolvedValue({
       status: 'ok',
-      info: { memory_heap: { status: 'up' }, storage: { status: 'up' } },
+      info: {
+        database: { status: 'up' },
+        memory_heap: { status: 'up' },
+        storage: { status: 'up' },
+      },
       error: {},
-      details: { memory_heap: { status: 'up' }, storage: { status: 'up' } },
+      details: {
+        database: { status: 'up' },
+        memory_heap: { status: 'up' },
+        storage: { status: 'up' },
+      },
     });
 
     const result = await controller.check();

@@ -9,7 +9,10 @@ import {
   HealthCheck,
   HealthCheckService,
   MemoryHealthIndicator,
+  PrismaHealthIndicator,
 } from '@nestjs/terminus';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { PrismaService } from '@/prisma/prisma.service';
 
 @Controller('health')
 export class HealthController {
@@ -17,13 +20,16 @@ export class HealthController {
     private readonly health: HealthCheckService,
     private readonly disk: DiskHealthIndicator,
     private readonly memory: MemoryHealthIndicator,
+    private readonly prisma: PrismaHealthIndicator,
+    private readonly prismaService: PrismaService,
   ) {}
 
   @Get()
+  @AllowAnonymous()
   @HealthCheck()
   @ApiOperation({
     summary: 'Verifica a saúde da aplicação',
-    description: 'Checa os indicadores de memória e disco.',
+    description: 'Checa os indicadores de banco de dados, memória e disco.',
   })
   @ApiOkResponse({
     description: 'Todos os indicadores de saúde estão operacionais.',
@@ -34,8 +40,8 @@ export class HealthController {
     schema: { example: { status: 'error' } },
   })
   check() {
-    // health.check() runs all indicators in parallel via Promise.allSettled
     return this.health.check([
+      () => this.prisma.pingCheck('database', this.prismaService),
       () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
       () =>
         this.disk.checkStorage('storage', {
