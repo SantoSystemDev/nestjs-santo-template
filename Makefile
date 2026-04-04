@@ -110,8 +110,14 @@ auth-gen: ##@PRISMA Generate better-auth schema into Prisma
 	@npx auth@latest generate --config ./src/lib/auth.ts
 	@echo "$(GREEN)[OK]$(RESET) better-auth schema generated! Run 'make db-gen' to regenerate Prisma client."
 
+.PHONY: db-push
+db-push: ##@PRISMA Push schema to database (create/update tables)
+	@echo "$(CYAN)[PRISMA]$(RESET) Pushing schema to database..."
+	@npx prisma db push
+	@echo "$(GREEN)[OK]$(RESET) Database schema updated!"
+
 .PHONY: db-setup
-db-setup: up auth-gen db-gen ##@DATABASE Full database setup: Docker + Prisma
+db-setup: up auth-gen db-gen db-push ##@DATABASE Full database setup: Docker + Prisma
 	@echo "$(GREEN)[OK]$(RESET) Database setup complete!"
 
 .PHONY: db-seed
