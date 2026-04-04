@@ -13,6 +13,24 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true, // Set to false if you don't want to require email verification
     revokeSessionsOnPasswordReset: true, // Set to false if you don't want to revoke sessions on password reset
+    // eslint-disable-next-line @typescript-eslint/require-await
+    sendResetPassword: async ({ user, url, token }) => {
+      // TODO: Replace with a real email provider (Resend, SES, Nodemailer, etc.)
+      console.log(
+        `[DEV] Password reset for ${user.email}: ${url} (token: ${token})`,
+      );
+    },
+  },
+  emailVerification: {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    sendVerificationEmail: async ({ user, url, token }) => {
+      // TODO: Replace with a real email provider (Resend, SES, Nodemailer, etc.)
+      console.log(
+        `[DEV] Verification email for ${user.email}: ${url} (token: ${token})`,
+      );
+    },
+    sendOnSignUp: true, // Set to false if you don't want to send verification email on sign up
+    autoSignInAfterVerification: true, // Set to false if you don't want to automatically sign in users after they verify their email
   },
   user: {
     changeEmail: {
