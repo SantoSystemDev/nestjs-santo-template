@@ -11,7 +11,7 @@ import {
   MemoryHealthIndicator,
   PrismaHealthIndicator,
 } from '@nestjs/terminus';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { AllowAnonymous } from '@/auth/decorators';
 import { PrismaService } from '@/prisma/prisma.service';
 
 @Controller('health')

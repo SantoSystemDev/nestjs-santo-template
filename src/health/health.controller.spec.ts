@@ -2,7 +2,7 @@ jest.mock('@/generated/prisma/client', () => ({
   PrismaClient: class PrismaClient {},
 }));
 
-jest.mock('@thallesp/nestjs-better-auth', () => ({
+jest.mock('@/auth/decorators', () => ({
   AllowAnonymous: () => () => {},
 }));
 
