@@ -1,0 +1,86 @@
+info:
+  name: Verifica a saúde da aplicação
+  type: http
+  seq: 1
+  tags:
+    - Health
+
+http:
+  method: GET
+  url: "{{baseUrl}}/health"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: The Health Check is successful
+    request:
+      url: "{{baseUrl}}/health"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "status": "ok",
+            "info": {
+              "database": {
+                "status": "up"
+              }
+            },
+            "error": {},
+            "details": {
+              "database": {
+                "status": "up"
+              }
+            }
+          }
+  - name: 503 Response
+    description: The Health Check is not successful
+    request:
+      url: "{{baseUrl}}/health"
+      method: GET
+    response:
+      status: 503
+      statusText: Service Unavailable
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "status": "error",
+            "info": {
+              "database": {
+                "status": "up"
+              }
+            },
+            "error": {
+              "redis": {
+                "status": "down",
+                "message": "Could not connect"
+              }
+            },
+            "details": {
+              "database": {
+                "status": "up"
+              },
+              "redis": {
+                "status": "down",
+                "message": "Could not connect"
+              }
+            }
+          }
+
+docs: Checa os indicadores de banco de dados, memória e disco.
