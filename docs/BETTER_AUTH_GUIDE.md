@@ -202,3 +202,16 @@ npx prisma generate
 | `@Session()`           | parâmetro        | Injeta a `UserSession` no parâmetro            |
 | `@Roles(['admin'])`    | classe ou método | Exige `user.role` específico (plugin admin)    |
 | `@OrgRoles(['owner'])` | classe ou método | Exige role de membro na org ativa              |
+
+### Referências da DOC oficial do better-auth
+
+| Recurso                                        | Link                                                       |
+| ---------------------------------------------- | ---------------------------------------------------------- |
+| better-auth — Email & Password                 | https://better-auth.com/docs/authentication/email-password |
+| better-auth — Email Verification               | https://better-auth.com/docs/concepts/email                |
+| better-auth — Session Management               | https://better-auth.com/docs/concepts/session-management   |
+| better-auth — Database                         | https://better-auth.com/docs/concepts/database             |
+| better-auth — Prisma Adapter                   | https://better-auth.com/docs/adapters/prisma               |
+| better-auth — Security                         | https://better-auth.com/docs/reference/security            |
+| better-auth — NestJS Integration               | https://better-auth.com/docs/integrations/nestjs           |
+| Repositório de referência (nestjs-better-auth) | https://github.com/ThallesP/nestjs-better-auth             |

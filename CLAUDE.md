@@ -64,7 +64,7 @@ make totp-key                   # generate random 32 bytes Base64 for TOTP (Unix
 
 ## Key Conventions
 
-- **Auth decorators** (from `@thallesp/nestjs-better-auth`): `@AllowAnonymous()`, `@OptionalAuth()`, `@Roles([...])`, `@OrgRoles([...])`, `@Session()`
+- **Auth decorators** (from `@/auth/decorators`): `@AllowAnonymous()`, `@OptionalAuth()`, `@Roles([...])`, `@OrgRoles([...])`, `@Session()`
 - **Validation**: global `ValidationPipe` with `whitelist: true`, `transform: true`, `enableImplicitConversion: true`
 - **Path alias**: `@/*` maps to `src/*` (configured in tsconfig `paths` and Jest `moduleNameMapper`)
 - **TypeScript**: target ES2023, module resolution `nodenext`, `strictNullChecks: true`

@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# e2e test artifacts
+test/.e2e-env.json
+
 # Logs
 logs
 *.log
