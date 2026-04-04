@@ -3,9 +3,11 @@ import {
   MiddlewareConsumer,
   Module,
   NestModule,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import type { auth as authInstance } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 import bodyParser from 'body-parser';
 import { AuthGuard } from './auth.guard';
 import { AuthMiddleware } from './auth.middleware';
@@ -22,7 +24,7 @@ interface AuthModuleOptions {
 }
 
 @Module({})
-export class AuthModule implements NestModule {
+export class AuthModule implements NestModule, OnModuleDestroy {
   private static bodyParserOptions?: BodyParserOptions;
 
   static forRoot(options: AuthModuleOptions): DynamicModule {
@@ -44,6 +46,10 @@ export class AuthModule implements NestModule {
       ],
       exports: [AuthService, 'AUTH_INSTANCE'],
     };
+  }
+
+  async onModuleDestroy() {
+    await prisma.$disconnect();
   }
 
   configure(consumer: MiddlewareConsumer) {
