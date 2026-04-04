@@ -1,9 +1,33 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleFileExtensions": ["js", "json", "ts", "mjs"],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": ["@swc/jest", {
+      "jsc": {
+        "parser": { "syntax": "typescript", "decorators": true },
+        "transform": { "legacyDecorator": true, "decoratorMetadata": true },
+        "target": "es2022"
+      },
+      "module": { "type": "commonjs" }
+    }],
+    "^.+\\.mjs$": ["@swc/jest", {
+      "jsc": {
+        "parser": { "syntax": "ecmascript" },
+        "target": "es2022"
+      },
+      "module": { "type": "commonjs" }
+    }]
+  },
+  "transformIgnorePatterns": [
+    "/node_modules/\\.pnpm/"
+  ],
+  "globalSetup": "<rootDir>/setup-e2e.ts",
+  "globalTeardown": "<rootDir>/teardown-e2e.ts",
+  "testTimeout": 15000,
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/../src/$1",
+    "^(\\.{1,2}/.*)\\.js$": "$1"
   }
 }
